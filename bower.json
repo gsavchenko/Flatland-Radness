@@ -1,0 +1,25 @@
+{
+  "name": "comp392-Uphill-Madness",
+  "authors": [
+    "Jason Gunter and George Savchenko"
+  ],
+  "description": "COMP392 Uphill Madness Game for Advanced Graphics",
+  "main": "",
+  "moduleType": [],
+  "license": "MIT",
+  "homepage": "https://github.com/gsavchenko/Uphill-Madness",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests",
+    "Scripts/lib"
+  ],
+  "dependencies": {
+    "three.js": "threejs#*",
+    "dat-gui": "~0.5.1",
+    "stats.js": "*",
+    "Physijs": "physijs#*"
+  }
+}
