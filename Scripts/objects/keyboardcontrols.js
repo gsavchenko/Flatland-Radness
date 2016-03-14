@@ -4,6 +4,7 @@ var objects;
     var KeyboardControls = (function () {
         // CONSTRUCTOR ++++++++++++++++++++++++++    
         function KeyboardControls() {
+            this.enabled = false;
             document.addEventListener('keydown', this.onKeyDown.bind(this), false);
             document.addEventListener('keyup', this.onKeyUp.bind(this), false);
         }
@@ -55,8 +56,7 @@ var objects;
             }
         };
         return KeyboardControls;
-    }());
+    })();
     objects.KeyboardControls = KeyboardControls;
 })(objects || (objects = {}));
-
 //# sourceMappingURL=keyboardcontrols.js.map

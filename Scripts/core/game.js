@@ -56,6 +56,9 @@ var game = (function () {
     var sphereMaterial;
     var sphere;
     var keyboardControls;
+    var isGrounded;
+    var velocity = new Vector3(0, 0, 0);
+    var prevTime = 0;
     function init() {
         // Create to HTMLElements
         blocker = document.getElementById("blocker");
@@ -64,6 +67,7 @@ var game = (function () {
         havePointerLock = 'pointerLockElement' in document ||
             'mozPointerLockElement' in document ||
             'webkitPointerLockElement' in document;
+        keyboardControls = new objects.KeyboardControls();
         if (havePointerLock) {
             element = document.body;
             instructions.addEventListener('click', function () {
@@ -131,6 +135,7 @@ var game = (function () {
         player.addEventListener('collision', function (event) {
             if (event.name === "Ground") {
                 console.log("player hit the ground");
+                isGrounded = true;
             }
             if (event.name === "Sphere") {
                 console.log("player hit the sphere");
@@ -146,7 +151,6 @@ var game = (function () {
         sphere.name = "Sphere";
         scene.add(sphere);
         console.log("Added Sphere to Scene");
-        keyboardControls = new objects.KeyboardControls();
         // add controls
         gui = new GUI();
         control = new Control();
@@ -163,10 +167,12 @@ var game = (function () {
     function pointerLockChange(event) {
         if (document.pointerLockElement === element) {
             // enable our mouse and keyboard controls
+            keyboardControls.enabled = true;
             blocker.style.display = 'none';
         }
         else {
             // disable our mouse and keyboard controls
+            keyboardControls.enabled = false;
             blocker.style.display = '-webkit-box';
             blocker.style.display = '-moz-box';
             blocker.style.display = 'box';
@@ -200,21 +206,38 @@ var game = (function () {
     // Setup main game loop
     function gameLoop() {
         stats.update();
-        if (keyboardControls.moveForward) {
-            console.log("Moving Forward");
+        if (keyboardControls.enabled) {
+            velocity = new Vector3();
+            var time = performance.now();
+            var delta = (time - prevTime) / 1000;
+            if (isGrounded) {
+                if (keyboardControls.moveForward) {
+                    console.log("Moving Forward");
+                    velocity.z -= 400.0 * delta;
+                }
+                if (keyboardControls.moveLeft) {
+                    console.log("Moving left");
+                    velocity.x -= 400.0 * delta;
+                }
+                if (keyboardControls.moveBackward) {
+                    console.log("Moving Backward");
+                    velocity.z += 400.0 * delta;
+                }
+                if (keyboardControls.moveRight) {
+                    console.log("Moving Right");
+                    velocity.x += 400.0 * delta;
+                }
+                if (keyboardControls.jump) {
+                    console.log("Jumping");
+                    velocity.y += 2000.0 * delta;
+                    if (player.position.y > 4) {
+                        isGrounded = false;
+                    }
+                }
+            }
         }
-        if (keyboardControls.moveLeft) {
-            console.log("Moving left");
-        }
-        if (keyboardControls.moveBackward) {
-            console.log("Moving Backward");
-        }
-        if (keyboardControls.moveRight) {
-            console.log("Moving Right");
-        }
-        if (keyboardControls.jump) {
-            console.log("Jumping");
-        }
+        player.applyCentralForce(velocity);
+        prevTime = time;
         // render using requestAnimationFrame
         requestAnimationFrame(gameLoop);
         // render the scene
@@ -241,5 +264,4 @@ var game = (function () {
         scene: scene
     };
 })();
-
 //# sourceMappingURL=game.js.map
