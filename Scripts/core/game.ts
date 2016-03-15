@@ -5,11 +5,11 @@ MAIN GAME FILE
 Source file	name:       game.ts
 Author’s name:	        George Savcheko and Jason Gunter
 Last modified by:       George Savchenko
-Date last modified:     2016-03-14
+Date last modified:     2016-03-15
 Program	description:    Create your own simple First Person Perspective game. The game must include hazards for the player to avoid. A scoring
                         system must also be included. You must build your own graphic and sound assets. You must use ThreeJS and a JavaScript 
                         Physics Engine to build your game. 
-Revision history:       added shoes and textures
+Revision history:       made the madness 'uphill' and some life functions
 THREEJS Aliases
 */
 import Scene = Physijs.Scene;
@@ -37,6 +37,7 @@ import Face3 = THREE.Face3;
 import Point = objects.Point;
 import CScreen = config.Screen;
 import Clock = THREE.Clock;
+//import TextGeometry = THREE.TextGeometry;
 
 //Custom Game Objects
 import gameObject = objects.gameObject;
@@ -75,12 +76,16 @@ var game = (() => {
     var isGrounded: boolean;
     var velocity: Vector3 = new Vector3(0, 0, 0);
     var prevTime: number = 0;
+    var lives = 1;
+    var livesText;
+    var collidableMeshList = [];
 
     function init() {
         // Create to HTMLElements
         blocker = document.getElementById("blocker");
         instructions = document.getElementById("instructions");
-
+        
+        updateLives();
         //check to see if pointerlock is supported
         havePointerLock = 'pointerLockElement' in document ||
             'mozPointerLockElement' in document ||
@@ -149,12 +154,32 @@ var game = (() => {
 
         // Burnt Ground
         groundGeometry = new BoxGeometry(32, 1, 32);
-        groundMaterial = Physijs.createMaterial(new LambertMaterial({ color: 0xe75d14 }), 0.4, 0);
+        groundGeometry.verticesNeedUpdate = true;
+        // Back - Top - Right
+        groundGeometry.vertices[0] = new THREE.Vector3(16, 10, 16);
+        // Back - Top - Left
+        groundGeometry.vertices[1] = new THREE.Vector3(16, 10, -16);
+        // Back - Bottom - Right
+        groundGeometry.vertices[2] = new THREE.Vector3(16, 9, 16);
+        // Back - Bottom - Left
+        groundGeometry.vertices[3] = new THREE.Vector3(16, 9, -16);
+        groundMaterial = Physijs.createMaterial(new LambertMaterial({ color: 0x00ff00 }), 0.4, 0);            
         ground = new Physijs.ConvexMesh(groundGeometry, groundMaterial, 0);
         ground.receiveShadow = true;
         ground.name = "Ground";
         scene.add(ground);
         console.log("Added Burnt Ground to scene");
+        
+        // Sphere Object
+        sphereGeometry = new SphereGeometry(2, 32, 32);
+        sphereMaterial = Physijs.createMaterial(new LambertMaterial({ color: 0x00ff00 }), 0.4, 0);
+        sphere = new Physijs.SphereMesh(sphereGeometry, sphereMaterial, 1);
+        sphere.position.set(0, 60, 10);
+        sphere.receiveShadow = true;
+        sphere.castShadow = true;
+        sphere.name = "Sphere";
+        scene.add(sphere);
+        console.log("Added Sphere to Scene"); 
 
         // Player Object
         playerGeometry = new BoxGeometry(2, 2, 2);
@@ -174,20 +199,10 @@ var game = (() => {
                 isGrounded = true;
             }
             if (event.name === "Sphere") {
+                updateLives();
                 console.log("player hit the sphere");
             }
         });
-
-        // Sphere Object
-        sphereGeometry = new SphereGeometry(2, 32, 32);
-        sphereMaterial = Physijs.createMaterial(new LambertMaterial({ color: 0x00ff00 }), 0.4, 0);
-        sphere = new Physijs.SphereMesh(sphereGeometry, sphereMaterial, 1);
-        sphere.position.set(0, 60, 10);
-        sphere.receiveShadow = true;
-        sphere.castShadow = true;
-        sphere.name = "Sphere";
-        scene.add(sphere);
-        console.log("Added Sphere to Scene");
 
         // add controls
         gui = new GUI();
@@ -248,6 +263,41 @@ var game = (() => {
         stats.domElement.style.top = '0px';
         document.body.appendChild(stats.domElement);
     }
+    
+    function spawnBoulders(): void{
+        var spawnX, spawnY, spawnZ;
+        
+        spawnX = getRandomInt(groundGeometry.vertices[0].x, groundGeometry.vertices[1].x);
+        spawnY = groundGeometry.vertices[0].y + 5;
+        
+        // Sphere Object
+        sphereGeometry = new SphereGeometry(2, 32, 32);
+        sphereMaterial = Physijs.createMaterial(new LambertMaterial({ color: 0x00ff00 }), 0.4, 0);
+        sphere = new Physijs.SphereMesh(sphereGeometry, sphereMaterial, 1);
+        sphere.position.set(0, 60, 10);
+        sphere.receiveShadow = true;
+        sphere.castShadow = true;
+        sphere.name = "Sphere";
+        scene.add(sphere);
+        console.log("Added Sphere to Scene");      
+    };
+    function getRandomInt(min, max) {
+        return Math.floor(Math.random() * (max - min + 1)) + min;
+    };
+    function updateLives(): void{
+        var text2 = document.createElement('div');
+        text2.style.position = 'absolute';
+        //text2.style.zIndex = 1;    // if you still don't see the label, try uncommenting this
+        //text2.setAttribute("id","test");
+        text2.style.width = "100";
+        text2.style.height = "100";
+        text2.style.color = "white"
+        text2.style.fontSize = "20";
+        text2.innerHTML = "Lives: " + lives;
+        text2.style.top = 50 + 'px';
+        text2.style.left = 50 + 'px';
+        document.body.appendChild(text2);
+    };
 
     // Setup main game loop
     function gameLoop(): void {
@@ -311,7 +361,7 @@ var game = (() => {
     // Setup main camera for the scene
     function setupCamera(): void {
         camera = new PerspectiveCamera(35, config.Screen.RATIO, 0.1, 100);
-        camera.position.set(0, 10, 30);
+        camera.position.set(-50, 10, 30);
         camera.lookAt(new Vector3(0, 0, 0));
         console.log("Finished setting up Camera...");
     }
