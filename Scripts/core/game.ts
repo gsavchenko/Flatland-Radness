@@ -4,8 +4,8 @@
 MAIN GAME FILE
 Source file	name:       game.ts
 Author’s name:	        George Savcheko and Jason Gunter
-Last modified by:       George Savchenko
-Date last modified:     2016-03-15
+Last modified by:       Jason Gunter
+Date last modified:     2016-03-16
 Program	description:    Create your own simple First Person Perspective game. The game must include hazards for the player to avoid. A scoring
                         system must also be included. You must build your own graphic and sound assets. You must use ThreeJS and a JavaScript 
                         Physics Engine to build your game. 
@@ -73,6 +73,7 @@ var game = (() => {
     var sphereMaterial: Physijs.Material;
     var sphere: Physijs.Mesh;
     var keyboardControls: objects.KeyboardControls;
+    var mouseControls: objects.MouseControls;
     var isGrounded: boolean;
     var velocity: Vector3 = new Vector3(0, 0, 0);
     var prevTime: number = 0;
@@ -92,6 +93,7 @@ var game = (() => {
             'webkitPointerLockElement' in document;
 
         keyboardControls = new objects.KeyboardControls();
+        mouseControls = new objects.MouseControls();
 
         if (havePointerLock) {
             element = document.body;
@@ -163,7 +165,7 @@ var game = (() => {
         groundGeometry.vertices[2] = new THREE.Vector3(16, 9, 16);
         // Back - Bottom - Left
         groundGeometry.vertices[3] = new THREE.Vector3(16, 9, -16);
-        groundMaterial = Physijs.createMaterial(new LambertMaterial({ color: 0x00ff00 }), 0.4, 0);            
+        groundMaterial = Physijs.createMaterial(new LambertMaterial({ color: 0x00ff00 }), 0, 0);            
         ground = new Physijs.ConvexMesh(groundGeometry, groundMaterial, 0);
         ground.receiveShadow = true;
         ground.name = "Ground";
@@ -186,7 +188,7 @@ var game = (() => {
         playerMaterial = Physijs.createMaterial(new LambertMaterial({ color: 0x00ff00 }), 0.4, 0);
 
         player = new Physijs.BoxMesh(playerGeometry, playerMaterial, 1);
-        player.position.set(0, 30, 10);
+        player.position.set(0,30,10);
         player.receiveShadow = true;
         player.castShadow = true;
         player.name = "Player";
@@ -203,6 +205,10 @@ var game = (() => {
                 console.log("player hit the sphere");
             }
         });
+        
+        //Add camera to player
+        player.add(camera);
+        camera.position.set(0, 10, 30);
 
         // add controls
         gui = new GUI();
@@ -225,10 +231,12 @@ var game = (() => {
         if (document.pointerLockElement === element) {
             // enable our mouse and keyboard controls
             keyboardControls.enabled = true;
+            mouseControls.enabled = true;
             blocker.style.display = 'none';
         } else {
             // disable our mouse and keyboard controls
             keyboardControls.enabled = false;
+            mouseControls.enabled = false;
             blocker.style.display = '-webkit-box';
             blocker.style.display = '-moz-box';
             blocker.style.display = 'box';
@@ -302,50 +310,76 @@ var game = (() => {
     // Setup main game loop
     function gameLoop(): void {
         stats.update();
-        if (keyboardControls.enabled) {
-            velocity = new Vector3();
-            
-            var time: number = performance.now();
-            var delta: number = (time - prevTime) / 1000;
-
-            if (isGrounded) {
-
-                if (keyboardControls.moveForward) {
-                    console.log("Moving Forward");
-                    velocity.z -= 400.0 * delta;
-                }
-                if (keyboardControls.moveLeft) {
-                    console.log("Moving left");
-                    velocity.x -= 400.0 * delta;
-                }
-                if (keyboardControls.moveBackward) {
-                    console.log("Moving Backward");
-                    velocity.z += 400.0 * delta;
-                }
-                if (keyboardControls.moveRight) {
-                    console.log("Moving Right");
-                    velocity.x += 400.0 * delta;
-                }
-                if (keyboardControls.jump) {
-                    console.log("Jumping");
-                    velocity.y += 2000.0 * delta;
-                    if(player.position.y > 4) {
-                        isGrounded = false;
-                    }
-                }
-            }
-
-        }
         
-        player.applyCentralForce(velocity);
-
-        prevTime = time;
+        checkControls();
 
         // render using requestAnimationFrame
         requestAnimationFrame(gameLoop);
 
         // render the scene
         renderer.render(scene, camera);
+    }
+    
+    function checkControls(): void {
+        if (keyboardControls.enabled) {
+            velocity = new Vector3();
+
+            var time: number = performance.now();
+            var delta: number = (time - prevTime) / 1000;
+
+            if (isGrounded) {
+                var direction = new Vector3(0, 0, 0);
+                if (keyboardControls.moveForward) {
+                    velocity.z -= 400.0 * delta;
+                }
+                if (keyboardControls.moveLeft) {
+                    velocity.x -= 400.0 * delta;
+                }
+                if (keyboardControls.moveBackward) {
+                    velocity.z += 400.0 * delta;
+                }
+                if (keyboardControls.moveRight) {
+                    velocity.x += 400.0 * delta;
+                }
+                if (keyboardControls.jump) {
+                    velocity.y += 4000.0 * delta;
+                    if (player.position.y > 4) {
+                        isGrounded = false;
+                    }
+                }
+
+                player.setDamping(0.7, 0.1);
+                // Changing player's rotation
+                player.setAngularVelocity(new Vector3(0, mouseControls.yaw, 0));
+                direction.addVectors(direction, velocity);
+                direction.applyQuaternion(player.quaternion);
+                if (Math.abs(player.getLinearVelocity().x) < 20 && Math.abs(player.getLinearVelocity().y) < 10) {
+                    player.applyCentralForce(direction);
+                }
+
+                cameraLook();
+
+            } // isGrounded ends
+
+            //reset Pitch and Yaw
+            mouseControls.pitch = 0;
+            mouseControls.yaw = 0;
+
+            prevTime = time;
+        } // Controls Enabled ends
+        else {
+            player.setAngularVelocity(new Vector3(0, 0, 0));
+        }
+    }
+    
+    function cameraLook(): void {
+        var zenith: number = THREE.Math.degToRad(90);
+        var nadir: number = THREE.Math.degToRad(-90);
+
+        var cameraPitch: number = camera.rotation.x + mouseControls.pitch;
+
+        // Constrain the Camera Pitch
+        camera.rotation.x = THREE.Math.clamp(cameraPitch, nadir, zenith);
     }
 
     // Setup default renderer
@@ -361,8 +395,9 @@ var game = (() => {
     // Setup main camera for the scene
     function setupCamera(): void {
         camera = new PerspectiveCamera(35, config.Screen.RATIO, 0.1, 100);
-        camera.position.set(-50, 10, 30);
-        camera.lookAt(new Vector3(0, 0, 0));
+        // if camera is attached to player - comment next 2 lines
+        //camera.position.set(-50, 10, 30);
+        //camera.lookAt(new Vector3(0, 0, 0));
         console.log("Finished setting up Camera...");
     }
 
