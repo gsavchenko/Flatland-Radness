@@ -3,12 +3,12 @@
 MAIN GAME FILE
 Source file	name:       game.ts
 Author’s name:	        George Savcheko and Jason Gunter
-Last modified by:       Jason Gunter
-Date last modified:     2016-03-16
+Last modified by:       George Savchenko
+Date last modified:     2016-03-18
 Program	description:    Create your own simple First Person Perspective game. The game must include hazards for the player to avoid. A scoring
                         system must also be included. You must build your own graphic and sound assets. You must use ThreeJS and a JavaScript
                         Physics Engine to build your game.
-Revision history:       made the madness 'uphill' and some life functions
+Revision history:       Removed and backward movement
 THREEJS Aliases
 */
 var Scene = Physijs.Scene;
@@ -286,14 +286,8 @@ var game = (function () {
             var delta = (time - prevTime) / 1000;
             if (isGrounded) {
                 var direction = new Vector3(0, 0, 0);
-                if (keyboardControls.moveForward) {
-                    velocity.z -= 400.0 * delta;
-                }
                 if (keyboardControls.moveLeft) {
                     velocity.x -= 400.0 * delta;
-                }
-                if (keyboardControls.moveBackward) {
-                    velocity.z += 400.0 * delta;
                 }
                 if (keyboardControls.moveRight) {
                     velocity.x += 400.0 * delta;
