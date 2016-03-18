@@ -133,7 +133,8 @@ var game = (function () {
         console.log("Added spotLight to scene");
         // Burnt Ground
         groundGeometry = new BoxGeometry(100, 1, 30);
-        groundGeometry.verticesNeedUpdate = true;
+        var wallGeo = new BoxGeometry(100, 1, 100);
+        //groundGeometry.verticesNeedUpdate = true;
         // Back - Top - Right
         //groundGeometry.vertices[0] = new THREE.Vector3(50, 10, 50);
         // Back - Top - Left
@@ -148,6 +149,19 @@ var game = (function () {
         ground.name = "Ground";
         scene.add(ground);
         console.log("Added Burnt Ground to scene");
+        var wall = new Physijs.ConvexMesh(wallGeo, groundMaterial, 0);
+        wall.receiveShadow = true;
+        wall.name = "Wall1";
+        wall.rotation.x = 180;
+        wall.position.set(0, 0, 0);
+        scene.add(wall);
+        var wall2 = new Physijs.ConvexMesh(wallGeo, groundMaterial, 0);
+        wall2.receiveShadow = true;
+        wall2.name = "Wall2";
+        wall2.rotation.x = -180;
+        wall2.position.set(0, 0, 10);
+        scene.add(wall2);
+        console.log("Walls Added");
         // Sphere Object
         sphereGeometry = new SphereGeometry(2, 32, 32);
         sphereMaterial = Physijs.createMaterial(new LambertMaterial({ color: 0x00ff00 }), 0.4, 0);
@@ -166,6 +180,7 @@ var game = (function () {
         player.receiveShadow = true;
         player.castShadow = true;
         player.name = "Player";
+        player.rotation.y = 90;
         scene.add(player);
         console.log("Added Player to Scene");
         player.addEventListener('collision', function (event) {
@@ -256,18 +271,12 @@ var game = (function () {
     }
     ;
     function updateLives() {
-        var text2 = document.createElement('div');
-        text2.style.position = 'absolute';
-        //text2.style.zIndex = 1;    // if you still don't see the label, try uncommenting this
-        //text2.setAttribute("id","test");
-        text2.style.width = "100";
-        text2.style.height = "100";
+        var text2 = document.getElementById("lives");
         text2.style.color = "white";
         text2.style.fontSize = "20";
-        text2.innerHTML = "Lives: " + lives;
         text2.style.top = 50 + 'px';
         text2.style.left = 50 + 'px';
-        document.body.appendChild(text2);
+        text2.innerHTML = "Lives: " + lives--;
     }
     ;
     // Setup main game loop
@@ -286,14 +295,8 @@ var game = (function () {
             var delta = (time - prevTime) / 1000;
             if (isGrounded) {
                 var direction = new Vector3(0, 0, 0);
-                if (keyboardControls.moveForward) {
-                    velocity.z -= 400.0 * delta;
-                }
                 if (keyboardControls.moveLeft) {
                     velocity.x -= 400.0 * delta;
-                }
-                if (keyboardControls.moveBackward) {
-                    velocity.z += 400.0 * delta;
                 }
                 if (keyboardControls.moveRight) {
                     velocity.x += 400.0 * delta;
