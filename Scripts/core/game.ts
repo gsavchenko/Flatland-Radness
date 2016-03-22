@@ -49,7 +49,9 @@ Physijs.scripts.ammo = "/Scripts/lib/Physijs/examples/js/ammo.js";
 
 // setup an IIFE structure (Immediately Invoked Function Expression)
 var game = (() => {
-
+    
+    // This is a vital comment
+    
     // declare game objects
     var havePointerLock: boolean;
     var element: any;
