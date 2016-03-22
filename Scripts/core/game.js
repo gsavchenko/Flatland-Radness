@@ -3,12 +3,12 @@
 MAIN GAME FILE
 Source file	name:       game.ts
 Author’s name:	        George Savcheko and Jason Gunter
-Last modified by:       George Savchenko
-Date last modified:     2016-03-18
+Last modified by:       Jason Gunter
+Date last modified:     2016-03-16
 Program	description:    Create your own simple First Person Perspective game. The game must include hazards for the player to avoid. A scoring
                         system must also be included. You must build your own graphic and sound assets. You must use ThreeJS and a JavaScript
                         Physics Engine to build your game.
-Revision history:       Removed and backward movement
+Revision history:       made the madness 'uphill' and some life functions
 THREEJS Aliases
 */
 var Scene = Physijs.Scene;
@@ -66,6 +66,9 @@ var game = (function () {
     var sphereGeometry;
     var sphereMaterial;
     var sphere;
+    var coin;
+    var coinGeo;
+    var coinMaterial;
     var keyboardControls;
     var mouseControls;
     var isGrounded;
@@ -115,10 +118,10 @@ var game = (function () {
         setupCamera(); // setup the camera
         // Spot Light
         spotLight = new SpotLight(0xffffff);
-        spotLight.position.set(20, 40, -15);
+        spotLight.position.set(40, 100, -40);
         spotLight.castShadow = true;
-        spotLight.intensity = 2;
-        spotLight.lookAt(new Vector3(0, 0, 0));
+        spotLight.intensity = 1;
+        spotLight.lookAt(new Vector3(0, 10, 0));
         spotLight.shadowCameraNear = 2;
         spotLight.shadowCameraFar = 200;
         spotLight.shadowCameraLeft = -5;
@@ -132,40 +135,57 @@ var game = (function () {
         scene.add(spotLight);
         console.log("Added spotLight to scene");
         // Burnt Ground
-        groundGeometry = new BoxGeometry(32, 1, 32);
-        groundGeometry.verticesNeedUpdate = true;
+        groundGeometry = new BoxGeometry(100, 1, 30);
+        var wallGeo = new BoxGeometry(100, 1, 100);
+        //groundGeometry.verticesNeedUpdate = true;
         // Back - Top - Right
-        groundGeometry.vertices[0] = new THREE.Vector3(16, 10, 16);
+        //groundGeometry.vertices[0] = new THREE.Vector3(50, 10, 50);
         // Back - Top - Left
-        groundGeometry.vertices[1] = new THREE.Vector3(16, 10, -16);
+        //groundGeometry.vertices[1] = new THREE.Vector3(50, 10, -50);
         // Back - Bottom - Right
-        groundGeometry.vertices[2] = new THREE.Vector3(16, 9, 16);
+        //groundGeometry.vertices[2] = new THREE.Vector3(50, 9.1, 50);
         // Back - Bottom - Left
-        groundGeometry.vertices[3] = new THREE.Vector3(16, 9, -16);
+        //groundGeometry.vertices[3] = new THREE.Vector3(50, 9.1, -50);
         groundMaterial = Physijs.createMaterial(new LambertMaterial({ color: 0x00ff00 }), 0, 0);
         ground = new Physijs.ConvexMesh(groundGeometry, groundMaterial, 0);
         ground.receiveShadow = true;
         ground.name = "Ground";
         scene.add(ground);
         console.log("Added Burnt Ground to scene");
-        // Sphere Object
+        var wall = new Physijs.ConvexMesh(wallGeo, groundMaterial, 0);
+        wall.receiveShadow = true;
+        wall.name = "Wall1";
+        wall.rotation.x = 0.8;
+        wall.position.set(0, 0, 0);
+        scene.add(wall);
+        var wall2 = new Physijs.ConvexMesh(wallGeo, groundMaterial, 0);
+        wall2.receiveShadow = true;
+        wall2.name = "Wall2";
+        wall2.rotation.x = -0.8;
+        wall2.position.set(0, 0, 10);
+        scene.add(wall2);
+        console.log("Walls Added");
+        4;
+        // spehere
         sphereGeometry = new SphereGeometry(2, 32, 32);
         sphereMaterial = Physijs.createMaterial(new LambertMaterial({ color: 0x00ff00 }), 0.4, 0);
         sphere = new Physijs.SphereMesh(sphereGeometry, sphereMaterial, 1);
-        sphere.position.set(0, 60, 10);
-        sphere.receiveShadow = true;
-        sphere.castShadow = true;
-        sphere.name = "Sphere";
-        scene.add(sphere);
-        console.log("Added Sphere to Scene");
+        // coin
+        coinGeo = new SphereGeometry(0.5, 32, 32);
+        coinMaterial = Physijs.createMaterial(new LambertMaterial({ color: 0xf1ff00 }), 0.4, 0);
+        coin = new Physijs.SphereMesh(coinGeo, coinMaterial, 1);
+        //spawn objects
+        spawnCoin();
+        spawnBoulders();
         // Player Object
         playerGeometry = new BoxGeometry(2, 2, 2);
         playerMaterial = Physijs.createMaterial(new LambertMaterial({ color: 0x00ff00 }), 0.4, 0);
         player = new Physijs.BoxMesh(playerGeometry, playerMaterial, 1);
-        player.position.set(0, 30, 10);
+        player.position.set(20, 5, 1.5);
         player.receiveShadow = true;
         player.castShadow = true;
         player.name = "Player";
+        player.rotation.y = 0.99;
         scene.add(player);
         console.log("Added Player to Scene");
         player.addEventListener('collision', function (event) {
@@ -180,7 +200,7 @@ var game = (function () {
         });
         //Add camera to player
         player.add(camera);
-        camera.position.set(0, 10, 30);
+        camera.position.set(0, 1, 0);
         // add controls
         gui = new GUI();
         control = new Control();
@@ -236,14 +256,9 @@ var game = (function () {
         document.body.appendChild(stats.domElement);
     }
     function spawnBoulders() {
-        var spawnX, spawnY, spawnZ;
-        spawnX = getRandomInt(groundGeometry.vertices[0].x, groundGeometry.vertices[1].x);
-        spawnY = groundGeometry.vertices[0].y + 5;
         // Sphere Object
-        sphereGeometry = new SphereGeometry(2, 32, 32);
-        sphereMaterial = Physijs.createMaterial(new LambertMaterial({ color: 0x00ff00 }), 0.4, 0);
-        sphere = new Physijs.SphereMesh(sphereGeometry, sphereMaterial, 1);
-        sphere.position.set(0, 60, 10);
+        sphere.position.set(0, 1, 1.5);
+        sphere.rotation.y = 1;
         sphere.receiveShadow = true;
         sphere.castShadow = true;
         sphere.name = "Sphere";
@@ -251,29 +266,41 @@ var game = (function () {
         console.log("Added Sphere to Scene");
     }
     ;
+    function spawnCoin() {
+        // Coin Object
+        coin.position.set(0, 1, 1.5);
+        coin.receiveShadow = true;
+        coin.castShadow = true;
+        coin.name = "Coin";
+        scene.add(coin);
+        console.log("Added Coin to Scene");
+    }
+    function checkSpawns() {
+        if (sphere.position.x < -50 || sphere.position.x > 50) {
+            spawnBoulders();
+        }
+        if (coin.position.x < -50 || coin.position.x > 50) {
+            spawnCoin();
+        }
+    }
     function getRandomInt(min, max) {
         return Math.floor(Math.random() * (max - min + 1)) + min;
     }
     ;
     function updateLives() {
-        var text2 = document.createElement('div');
-        text2.style.position = 'absolute';
-        //text2.style.zIndex = 1;    // if you still don't see the label, try uncommenting this
-        //text2.setAttribute("id","test");
-        text2.style.width = "100";
-        text2.style.height = "100";
+        var text2 = document.getElementById("lives");
         text2.style.color = "white";
         text2.style.fontSize = "20";
-        text2.innerHTML = "Lives: " + lives;
         text2.style.top = 50 + 'px';
         text2.style.left = 50 + 'px';
-        document.body.appendChild(text2);
+        text2.innerHTML = "Lives: " + lives--;
     }
     ;
     // Setup main game loop
     function gameLoop() {
         stats.update();
         checkControls();
+        checkSpawns();
         // render using requestAnimationFrame
         requestAnimationFrame(gameLoop);
         // render the scene
@@ -287,10 +314,10 @@ var game = (function () {
             if (isGrounded) {
                 var direction = new Vector3(0, 0, 0);
                 if (keyboardControls.moveLeft) {
-                    velocity.x -= 400.0 * delta;
+                    velocity.x -= 600.0 * delta;
                 }
                 if (keyboardControls.moveRight) {
-                    velocity.x += 400.0 * delta;
+                    velocity.x += 600.0 * delta;
                 }
                 if (keyboardControls.jump) {
                     velocity.y += 4000.0 * delta;
@@ -301,10 +328,28 @@ var game = (function () {
                 player.setDamping(0.7, 0.1);
                 // Changing player's rotation
                 player.setAngularVelocity(new Vector3(0, mouseControls.yaw, 0));
+                //player movement
                 direction.addVectors(direction, velocity);
                 direction.applyQuaternion(player.quaternion);
                 if (Math.abs(player.getLinearVelocity().x) < 20 && Math.abs(player.getLinearVelocity().y) < 10) {
                     player.applyCentralForce(direction);
+                }
+                // other objects movement
+                var velocity2 = new Vector3();
+                var direction2 = new Vector3();
+                velocity2.z += 400 * delta;
+                direction2.addVectors(direction2, velocity2);
+                direction2.applyQuaternion(coin.quaternion);
+                if (Math.abs(coin.getLinearVelocity().x) < 20 && Math.abs(coin.getLinearVelocity().y) < 10) {
+                    coin.applyCentralForce(direction2);
+                }
+                var velocity3 = new Vector3();
+                var direction3 = new Vector3();
+                velocity3.z += 400 * delta;
+                direction3.addVectors(direction3, velocity3);
+                direction3.applyQuaternion(sphere.quaternion);
+                if (Math.abs(sphere.getLinearVelocity().x) < 20 && Math.abs(sphere.getLinearVelocity().y) < 10) {
+                    sphere.applyCentralForce(direction3);
                 }
                 cameraLook();
             } // isGrounded ends
@@ -318,8 +363,8 @@ var game = (function () {
         }
     }
     function cameraLook() {
-        var zenith = THREE.Math.degToRad(90);
-        var nadir = THREE.Math.degToRad(-90);
+        var zenith = THREE.Math.degToRad(10);
+        var nadir = THREE.Math.degToRad(-10);
         var cameraPitch = camera.rotation.x + mouseControls.pitch;
         // Constrain the Camera Pitch
         camera.rotation.x = THREE.Math.clamp(cameraPitch, nadir, zenith);
