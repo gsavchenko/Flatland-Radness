@@ -306,7 +306,7 @@ var game = (() => {
     
     function spawnBoulders(): void{
         // Sphere Object
-        sphere.position.set(-30, 5, 5);
+        sphere.position.set(-20, 5, 5);
         sphere.rotation.y = 1.5;
         sphere.receiveShadow = true;
         sphere.castShadow = true;
@@ -318,7 +318,7 @@ var game = (() => {
     function spawnCoin() {
         // Coin Object
         if (sphere.position.x < -30 || sphere.position.x > -10) {
-            coin.position.set(-30, 1, 5);
+            coin.position.set(-20, 1, 5);
             coin.rotation.y = 1.5;
             coin.receiveShadow = true;
             coin.castShadow = true;
