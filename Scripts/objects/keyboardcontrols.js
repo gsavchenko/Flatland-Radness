@@ -30,6 +30,16 @@ var objects;
                 case 32:
                     this.jump = true;
                     break;
+                case 82:
+                    this.restartP1 = true;
+                    break;
+                case 89:
+                    this.restartP2 = true;
+                    break;
+                default:
+                    this.restartP1 = false; //if any other key, set the restart sequence to false
+                    this.restartP2 = false;
+                    break;
             }
         };
         KeyboardControls.prototype.onKeyUp = function (event) {
