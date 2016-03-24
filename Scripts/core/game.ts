@@ -163,7 +163,7 @@ var game = (() => {
         // Burnt Ground
         groundGeometry = new BoxGeometry(50, 1, 50);
         var wallGeo = new BoxGeometry(50, 1, 15);
-        groundMaterial = Physijs.createMaterial(new LambertMaterial({ color: 0x00ff00 }), 0, 0);            
+        groundMaterial = Physijs.createMaterial(new LambertMaterial({ color: 0x3498db }), 0, 0);            
         ground = new Physijs.ConvexMesh(groundGeometry, groundMaterial, 0);
         ground.receiveShadow = true;
         ground.name = "Ground";
@@ -304,9 +304,9 @@ var game = (() => {
     
     function spawnBoulders(): void{
         for (var i = 0; i < 4; i++) {
-            if (boulders[i] == undefined) { //if no boulder then add a boulder :) - jgunter
+            if (boulders[i] == undefined) { // if no boulder then add a boulder :) - jgunter
                 sphereGeometry = new SphereGeometry(1, 32, 32);
-                sphereMaterial = Physijs.createMaterial(new LambertMaterial({ color: 0x00ff00 }), 0.4, 0);
+                sphereMaterial = Physijs.createMaterial(new LambertMaterial({ color: 0x8B4726 }), 0.4, 0);
                 sphere = new Physijs.SphereMesh(sphereGeometry, sphereMaterial, 1);
                 var xRand = getRandomSphereCoordinate();
                 var zRand = getRandomSphereCoordinate();
@@ -322,10 +322,10 @@ var game = (() => {
     
     function spawnCoin() {
         // Coin Object
-        if (coin = undefined) {
+        if (coin == undefined) {
             coinGeo = new SphereGeometry(0.5, 32, 32);
             coinMaterial = Physijs.createMaterial(new LambertMaterial({ color: 0xffff00 }), 0.4, 0);
-            coin = new Physijs.SphereMesh(coinGeo, coinMaterial, 1);
+            coin = new Physijs.CylinderMesh(coinGeo, coinMaterial, 1);
             var xRand = getRandomSphereCoordinate();
             var zRand = getRandomSphereCoordinate();
             coin.position.set(xRand, 2, zRand);
