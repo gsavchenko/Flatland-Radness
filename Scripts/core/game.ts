@@ -4,12 +4,12 @@
 MAIN GAME FILE
 Source file	name:       game.ts
 Author’s name:	        George Savcheko and Jason Gunter
-Last modified by:       Jason Gunter
-Date last modified:     2016-03-16
+Last modified by:       George Savchenko
+Date last modified:     2016-03-23
 Program	description:    Create your own simple First Person Perspective game. The game must include hazards for the player to avoid. A scoring
                         system must also be included. You must build your own graphic and sound assets. You must use ThreeJS and a JavaScript 
                         Physics Engine to build your game. 
-Revision history:       made the madness 'uphill' and some life functions
+Revision history:       fixed rotation, added walls, made room
 THREEJS Aliases
 */
 import Scene = Physijs.Scene;
@@ -161,8 +161,8 @@ var game = (() => {
         console.log("Added spotLight to scene");
 
         // Burnt Ground
-        groundGeometry = new BoxGeometry(100, 1, 100);
-        var wallGeo = new BoxGeometry(100, 1, 100);
+        groundGeometry = new BoxGeometry(50, 1, 50);
+        var wallGeo = new BoxGeometry(50, 1, 15);
         groundMaterial = Physijs.createMaterial(new LambertMaterial({ color: 0x00ff00 }), 0, 0);            
         ground = new Physijs.ConvexMesh(groundGeometry, groundMaterial, 0);
         ground.receiveShadow = true;
@@ -173,17 +173,33 @@ var game = (() => {
         var wall = new Physijs.ConvexMesh(wallGeo, groundMaterial, 0);
         wall.receiveShadow = true;
         wall.name = "Wall1";
-        wall.rotation.x = -1.7;
-        wall.position.set(0,0,0);
+        wall.rotation.x = Math.PI / 2;;
+        wall.position.set(0,7,-25);
         scene.add(wall);
         
         var wall2 = new Physijs.ConvexMesh(wallGeo, groundMaterial, 0);
         wall2.receiveShadow = true;
         wall2.name = "Wall2";
-        wall2.rotation.x = -1.5;
-        wall2.position.set(0,0,10); 
+        wall2.rotation.x = -Math.PI / 2;;
+        wall2.position.set(0,7,25); 
         scene.add(wall2);
-        console.log("Walls Added");4
+        
+        var wall3 = new Physijs.ConvexMesh(wallGeo, groundMaterial, 0);
+        wall3.receiveShadow = true;
+        wall3.name = "Wall3";
+        wall3.rotation.x = -Math.PI / 2;;
+        wall3.rotation.z = -Math.PI / 2;;
+        wall3.position.set(25,7,0);
+        scene.add(wall3);
+        
+        var wall4 = new Physijs.ConvexMesh(wallGeo, groundMaterial, 0);
+        wall4.receiveShadow = true;
+        wall4.name = "Wall4";
+        wall4.rotation.x = -Math.PI / 2;;
+        wall4.rotation.z = -Math.PI / 2;;
+        wall4.position.set(-25,7,0); 
+        scene.add(wall4);
+        console.log("Walls Added");
 
         // spehere
         sphereGeometry = new SphereGeometry(1, 32, 32);
