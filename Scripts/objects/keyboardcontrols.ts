@@ -8,6 +8,8 @@ module objects {
         public moveRight: boolean;
         public jump: boolean;
         public enabled: boolean;
+        public restartP1: boolean;
+        public restartP2: boolean;
         // CONSTRUCTOR ++++++++++++++++++++++++++    
         constructor() {
             this.enabled = false;
@@ -37,6 +39,16 @@ module objects {
                     break;
                 case 32: /* Spacebar */
                     this.jump = true;
+                    break;
+                case 82: // R key
+                    this.restartP1 = true;
+                    break;
+                case 89: // Y key
+                    this.restartP2 = true;
+                    break;
+                 default:
+                    this.restartP1 = false; //if any other key, set the restart sequence to false
+                    this.restartP2 = false;
                     break;
             }
         }

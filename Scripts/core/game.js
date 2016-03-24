@@ -74,11 +74,12 @@ var game = (function () {
     var isGrounded;
     var velocity = new Vector3(0, 0, 0);
     var prevTime = 0;
-    var lives = 1;
+    var lives = 100;
     var score = 0;
     var livesText;
     var collidableMeshList = [];
     var boulders = [];
+    var numberOfBoulders = 10;
     function init() {
         coin = undefined; //trust me :) - jgunter
         // Create to HTMLElements
@@ -269,7 +270,7 @@ var game = (function () {
         document.body.appendChild(stats.domElement);
     }
     function spawnBoulders() {
-        for (var i = 0; i < 4; i++) {
+        for (var i = 0; i < numberOfBoulders; i++) {
             if (boulders[i] == undefined) {
                 sphereGeometry = new SphereGeometry(1, 32, 32);
                 sphereMaterial = Physijs.createMaterial(new LambertMaterial({ color: 0x8B4726 }), 0.4, 0);
@@ -326,14 +327,63 @@ var game = (function () {
         text2.style.fontSize = "20";
         text2.style.top = 50 + 'px';
         text2.style.left = 50 + 'px';
-        text2.innerHTML = "Lives: " + lives;
+        text2.innerHTML = "Health: " + lives + "<br>"
+            + "Score: " + score;
     }
     ;
+    function checkScores() {
+        var btnString = "<br><br><br>Press 'R' and they 'Y' to restart the game...";
+        var txtMsg = document.getElementById("msg");
+        txtMsg.style.color = "white";
+        txtMsg.style.fontSize = "60px";
+        var msgWidth = (txtMsg.clientWidth / 2);
+        txtMsg.style.display = "none";
+        txtMsg.style.top = 200 + 'px';
+        txtMsg.style.left = ((screen.width / 2) - msgWidth) + 'px';
+        var gameOver = false;
+        if (lives <= 0) {
+            //player lost, show msg and restart button. - jgunter
+            txtMsg.innerHTML = "You Lost dude.....take your things and get out! >:(" + btnString;
+            txtMsg.style.display = "block";
+            gameOver = true;
+        }
+        else if (score >= 10) {
+            //player won, show msg and restart button. - jgunter
+            txtMsg.innerHTML = "You Win DUDE! :)" + btnString;
+            txtMsg.style.display = "block";
+            gameOver = true;
+        }
+        else {
+            gameOver = false;
+        }
+        if (keyboardControls.restartP1 && keyboardControls.restartP2 && gameOver) {
+            RestartgamePlease();
+            keyboardControls.restartP1 = false;
+            keyboardControls.restartP2 = false;
+        }
+    }
+    function RestartgamePlease() {
+        score = 0;
+        lives = 100;
+        scene.remove(coin);
+        for (var i = 0; i < numberOfBoulders; i++) {
+            scene.remove(boulders[i]);
+        }
+        coin = undefined;
+        boulders = [];
+        spawnCoin();
+        spawnBoulders();
+        // Player Object
+        player.position.set(20, 5, 5);
+        player.rotation.y = 1.5;
+        updateLives(); //update the scoreboard values dude - jgunter.
+    }
     // Setup main game loop
     function gameLoop() {
         stats.update();
         checkControls();
         checkSpawns();
+        checkScores();
         // render using requestAnimationFrame
         requestAnimationFrame(gameLoop);
         // render the scene
@@ -345,8 +395,8 @@ var game = (function () {
             velocity = new Vector3();
             var time = performance.now();
             var delta = (time - prevTime) / 1000;
+            var direction = new Vector3(0, 0, 0);
             if (isGrounded) {
-                var direction = new Vector3(0, 0, 0);
                 if (keyboardControls.moveForward) {
                     velocity.z -= 400.0 * delta;
                 }
@@ -376,27 +426,52 @@ var game = (function () {
                 if (Math.abs(player.getLinearVelocity().x) < 20 && Math.abs(player.getLinearVelocity().y) < 10) {
                     player.applyCentralForce(direction);
                 }
-                // other objects movement
-                var velocity2 = new Vector3();
-                var direction2 = new Vector3();
-                velocity2.z += 400 * delta;
-                direction2.addVectors(direction2, velocity2);
-                if (coin != undefined) {
-                    direction2.applyQuaternion(coin.quaternion);
-                    coin.applyCentralForce(direction2);
-                }
-                for (var i = 0; i < 4; i++) {
-                    var velocity3 = new Vector3();
-                    var direction3 = new Vector3();
-                    velocity3.z += 500 * delta;
-                    direction3.addVectors(direction3, velocity3);
-                    if (boulders[i] != undefined) {
-                        direction3.applyQuaternion(boulders[i].quaternion);
-                        boulders[i].applyCentralForce(direction3);
-                    }
-                }
                 cameraLook();
             } // isGrounded ends
+            // other objects movement
+            var velocity2 = new Vector3();
+            var direction2 = new Vector3();
+            var rand = getRandomInt(0, 100);
+            if (rand < 25) {
+                velocity2.x += 500 * delta;
+            }
+            else if (rand > 25 && rand < 50) {
+                velocity2.x -= 500 * delta;
+            }
+            else if (rand > 50 && rand < 75) {
+                velocity2.z += 500 * delta;
+            }
+            else {
+                velocity2.z -= 500 * delta;
+            }
+            direction2.addVectors(direction2, velocity2);
+            if (coin != undefined) {
+                direction2.applyQuaternion(coin.quaternion);
+                coin.applyCentralForce(direction2);
+            }
+            for (var i = 0; i < numberOfBoulders; i++) {
+                var velocity3 = new Vector3();
+                var direction3 = new Vector3();
+                var rand = getRandomInt(0, 100);
+                if (rand < 25) {
+                    velocity3.x += 500 * delta;
+                }
+                else if (rand > 25 && rand < 50) {
+                    velocity3.x -= 500 * delta;
+                }
+                else if (rand > 50 && rand < 75) {
+                    velocity3.z += 500 * delta;
+                }
+                else {
+                    velocity3.z -= 500 * delta;
+                }
+                direction3.addVectors(direction3, velocity3);
+                if (boulders[i] != undefined) {
+                    direction3.applyQuaternion(boulders[i].quaternion);
+                    boulders[i].applyCentralForce(direction3);
+                }
+            }
+            // other movements ends :) - jgunter. Moved this cuz objects dont move if player has jumped
             //reset Pitch and Yaw
             mouseControls.pitch = 0;
             mouseControls.yaw = 0;
