@@ -86,8 +86,10 @@ var game = (() => {
     var score = 0;
     var livesText;
     var collidableMeshList = [];
+    var boulders: Physijs.Mesh[] = [];
 
     function init() {
+        coin = undefined; //trust me :) - jgunter
         // Create to HTMLElements
         blocker = document.getElementById("blocker");
         instructions = document.getElementById("instructions");
@@ -200,15 +202,6 @@ var game = (() => {
         wall4.position.set(-25,7,0); 
         scene.add(wall4);
         console.log("Walls Added");
-
-        // spehere
-        sphereGeometry = new SphereGeometry(1, 32, 32);
-        sphereMaterial = Physijs.createMaterial(new LambertMaterial({ color: 0x00ff00 }), 0.4, 0);
-        sphere = new Physijs.SphereMesh(sphereGeometry, sphereMaterial, 1);
-        // coin
-        coinGeo = new SphereGeometry(0.5, 32, 32);
-        coinMaterial = Physijs.createMaterial(new LambertMaterial({ color: 0xf1ff00 }), 0.4, 0);
-        coin = new Physijs.SphereMesh(coinGeo, coinMaterial, 1);
         
         //spawn objects
         spawnCoin();
@@ -235,6 +228,13 @@ var game = (() => {
                 lives = lives -= 1;
                 updateLives();
                 console.log("player hit the sphere");
+            }
+            if (event.name == "Coin") {
+                score = score += 1;
+                scene.remove(coin);
+                coin = undefined;
+                updateLives();
+                console.log("player hit the coin");
             }
         });
         
@@ -302,44 +302,62 @@ var game = (() => {
         stats.domElement.style.left = '0px';
         stats.domElement.style.top = '0px';
         document.body.appendChild(stats.domElement);
-    }
+    }        
     
     function spawnBoulders(): void{
-        // Sphere Object
-        sphere.position.set(-30, 5, 5);
-        sphere.rotation.y = 1.5;
-        sphere.receiveShadow = true;
-        sphere.castShadow = true;
-        sphere.name = "Boulder";
-        scene.add(sphere);
-        console.log("Added Sphere to Scene");      
+        for (var i = 0; i < 4; i++) {
+            if (boulders[i] == undefined) { //if no boulder then add a boulder :) - jgunter
+                sphereGeometry = new SphereGeometry(1, 32, 32);
+                sphereMaterial = Physijs.createMaterial(new LambertMaterial({ color: 0x00ff00 }), 0.4, 0);
+                sphere = new Physijs.SphereMesh(sphereGeometry, sphereMaterial, 1);
+                var xRand = getRandomSphereCoordinate();
+                var zRand = getRandomSphereCoordinate();
+                sphere.position.set(xRand, 5, zRand);
+                sphere.receiveShadow = true;
+                sphere.castShadow = true;
+                sphere.name = "Boulder";
+                boulders.push(sphere);
+                scene.add(boulders[i]);
+            }
+        }
     };
     
     function spawnCoin() {
         // Coin Object
-        if (sphere.position.x < -30 || sphere.position.x > -10) {
-            coin.position.set(-30, 1, 5);
-            coin.rotation.y = 1.5;
+        if (coin = undefined) {
+            coinGeo = new SphereGeometry(0.5, 32, 32);
+            coinMaterial = Physijs.createMaterial(new LambertMaterial({ color: 0xffff00 }), 0.4, 0);
+            coin = new Physijs.SphereMesh(coinGeo, coinMaterial, 1);
+            var xRand = getRandomSphereCoordinate();
+            var zRand = getRandomSphereCoordinate();
+            coin.position.set(xRand, 2, zRand);
             coin.receiveShadow = true;
             coin.castShadow = true;
             coin.name = "Coin";
             scene.add(coin);
-            console.log("Added Coin to Scene");  
         }
     }
     
     function checkSpawns() {
-        if (sphere.position.x < -50 || sphere.position.x > 50) {
             spawnBoulders();
-        }
-        if (coin.position.x < - 50 || coin.position.x > 50) {
             spawnCoin();
+    }
+    
+    function getRandomSphereCoordinate() {
+        var ret = 0; //middle
+        var intRand = getRandomInt(1,100);
+        if (intRand > 50) {
+            ret = 20;
+        } else {
+            ret = -20;
         }
+        return ret;
     }
     
     function getRandomInt(min, max) {
         return Math.floor(Math.random() * (max - min + 1)) + min;
     };
+    
     function updateLives(): void{
         var text2 = document.getElementById("lives");
         text2.style.color = "white"
@@ -411,15 +429,22 @@ var game = (() => {
                 var direction2 = new Vector3();
                 velocity2.z += 400 * delta;
                 direction2.addVectors(direction2, velocity2);
-                direction2.applyQuaternion(coin.quaternion);
-                coin.applyCentralForce(direction2);
+                if (coin != undefined) {
+                    direction2.applyQuaternion(coin.quaternion);
+                    coin.applyCentralForce(direction2);
+                }
                 
-                var velocity3 = new Vector3();
-                var direction3 = new Vector3();
-                velocity3.z += 400 * delta;
-                direction3.addVectors(direction3, velocity3);
-                direction3.applyQuaternion(sphere.quaternion);
-                sphere.applyCentralForce(direction3);
+                for (var i = 0; i < 4; i++) {
+                    var velocity3 = new Vector3();
+                    var direction3 = new Vector3();
+                    velocity3.z += 500 * delta;
+                    direction3.addVectors(direction3, velocity3);
+                    if (boulders[i] != undefined) {
+                        direction3.applyQuaternion(boulders[i].quaternion);
+                        boulders[i].applyCentralForce(direction3);
+                    }
+                }               
+                
 
                 cameraLook();
 
