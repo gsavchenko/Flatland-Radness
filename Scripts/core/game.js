@@ -44,6 +44,7 @@ Physijs.scripts.worker = "/Scripts/lib/Physijs/physijs_worker.js";
 Physijs.scripts.ammo = "/Scripts/lib/Physijs/examples/js/ammo.js";
 // setup an IIFE structure (Immediately Invoked Function Expression)
 var game = (function () {
+    // This is a vital comment
     // declare game objects
     var havePointerLock;
     var element;
@@ -135,17 +136,8 @@ var game = (function () {
         scene.add(spotLight);
         console.log("Added spotLight to scene");
         // Burnt Ground
-        groundGeometry = new BoxGeometry(100, 1, 30);
+        groundGeometry = new BoxGeometry(100, 1, 100);
         var wallGeo = new BoxGeometry(100, 1, 100);
-        //groundGeometry.verticesNeedUpdate = true;
-        // Back - Top - Right
-        //groundGeometry.vertices[0] = new THREE.Vector3(50, 10, 50);
-        // Back - Top - Left
-        //groundGeometry.vertices[1] = new THREE.Vector3(50, 10, -50);
-        // Back - Bottom - Right
-        //groundGeometry.vertices[2] = new THREE.Vector3(50, 9.1, 50);
-        // Back - Bottom - Left
-        //groundGeometry.vertices[3] = new THREE.Vector3(50, 9.1, -50);
         groundMaterial = Physijs.createMaterial(new LambertMaterial({ color: 0x00ff00 }), 0, 0);
         ground = new Physijs.ConvexMesh(groundGeometry, groundMaterial, 0);
         ground.receiveShadow = true;
@@ -306,6 +298,7 @@ var game = (function () {
         // render the scene
         renderer.render(scene, camera);
     }
+    // Check Controls Function
     function checkControls() {
         if (keyboardControls.enabled) {
             velocity = new Vector3();
@@ -313,11 +306,17 @@ var game = (function () {
             var delta = (time - prevTime) / 1000;
             if (isGrounded) {
                 var direction = new Vector3(0, 0, 0);
+                if (keyboardControls.moveForward) {
+                    velocity.z -= 400.0 * delta;
+                }
                 if (keyboardControls.moveLeft) {
-                    velocity.x -= 600.0 * delta;
+                    velocity.x -= 400.0 * delta;
+                }
+                if (keyboardControls.moveBackward) {
+                    velocity.z += 400.0 * delta;
                 }
                 if (keyboardControls.moveRight) {
-                    velocity.x += 600.0 * delta;
+                    velocity.x += 400.0 * delta;
                 }
                 if (keyboardControls.jump) {
                     velocity.y += 4000.0 * delta;
@@ -328,28 +327,10 @@ var game = (function () {
                 player.setDamping(0.7, 0.1);
                 // Changing player's rotation
                 player.setAngularVelocity(new Vector3(0, mouseControls.yaw, 0));
-                //player movement
                 direction.addVectors(direction, velocity);
                 direction.applyQuaternion(player.quaternion);
                 if (Math.abs(player.getLinearVelocity().x) < 20 && Math.abs(player.getLinearVelocity().y) < 10) {
                     player.applyCentralForce(direction);
-                }
-                // other objects movement
-                var velocity2 = new Vector3();
-                var direction2 = new Vector3();
-                velocity2.z += 400 * delta;
-                direction2.addVectors(direction2, velocity2);
-                direction2.applyQuaternion(coin.quaternion);
-                if (Math.abs(coin.getLinearVelocity().x) < 20 && Math.abs(coin.getLinearVelocity().y) < 10) {
-                    coin.applyCentralForce(direction2);
-                }
-                var velocity3 = new Vector3();
-                var direction3 = new Vector3();
-                velocity3.z += 400 * delta;
-                direction3.addVectors(direction3, velocity3);
-                direction3.applyQuaternion(sphere.quaternion);
-                if (Math.abs(sphere.getLinearVelocity().x) < 20 && Math.abs(sphere.getLinearVelocity().y) < 10) {
-                    sphere.applyCentralForce(direction3);
                 }
                 cameraLook();
             } // isGrounded ends
