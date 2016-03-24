@@ -76,6 +76,7 @@ var game = (function () {
     var velocity = new Vector3(0, 0, 0);
     var prevTime = 0;
     var lives = 1;
+    var score = 0;
     var livesText;
     var collidableMeshList = [];
     function init() {
@@ -119,7 +120,7 @@ var game = (function () {
         setupCamera(); // setup the camera
         // Spot Light
         spotLight = new SpotLight(0xffffff);
-        spotLight.position.set(40, 100, -40);
+        spotLight.position.set(0, 150, 0);
         spotLight.castShadow = true;
         spotLight.intensity = 1;
         spotLight.lookAt(new Vector3(0, 10, 0));
@@ -147,19 +148,19 @@ var game = (function () {
         var wall = new Physijs.ConvexMesh(wallGeo, groundMaterial, 0);
         wall.receiveShadow = true;
         wall.name = "Wall1";
-        wall.rotation.x = 0.8;
+        wall.rotation.x = -1.7;
         wall.position.set(0, 0, 0);
         scene.add(wall);
         var wall2 = new Physijs.ConvexMesh(wallGeo, groundMaterial, 0);
         wall2.receiveShadow = true;
         wall2.name = "Wall2";
-        wall2.rotation.x = -0.8;
+        wall2.rotation.x = -1.5;
         wall2.position.set(0, 0, 10);
         scene.add(wall2);
         console.log("Walls Added");
         4;
         // spehere
-        sphereGeometry = new SphereGeometry(2, 32, 32);
+        sphereGeometry = new SphereGeometry(1, 32, 32);
         sphereMaterial = Physijs.createMaterial(new LambertMaterial({ color: 0x00ff00 }), 0.4, 0);
         sphere = new Physijs.SphereMesh(sphereGeometry, sphereMaterial, 1);
         // coin
@@ -173,19 +174,20 @@ var game = (function () {
         playerGeometry = new BoxGeometry(2, 2, 2);
         playerMaterial = Physijs.createMaterial(new LambertMaterial({ color: 0x00ff00 }), 0.4, 0);
         player = new Physijs.BoxMesh(playerGeometry, playerMaterial, 1);
-        player.position.set(20, 5, 1.5);
+        player.position.set(20, 5, 5);
         player.receiveShadow = true;
         player.castShadow = true;
         player.name = "Player";
-        player.rotation.y = 0.99;
+        player.rotation.y = 1.5;
         scene.add(player);
-        console.log("Added Player to Scene");
+        console.log("Added Pladyer to Scene");
         player.addEventListener('collision', function (event) {
             if (event.name === "Ground") {
                 console.log("player hit the ground");
                 isGrounded = true;
             }
-            if (event.name === "Sphere") {
+            if (event.name === "Boulder") {
+                lives = lives -= 1;
                 updateLives();
                 console.log("player hit the sphere");
             }
@@ -249,23 +251,26 @@ var game = (function () {
     }
     function spawnBoulders() {
         // Sphere Object
-        sphere.position.set(0, 1, 1.5);
-        sphere.rotation.y = 1;
+        sphere.position.set(-30, 5, 5);
+        sphere.rotation.y = 1.5;
         sphere.receiveShadow = true;
         sphere.castShadow = true;
-        sphere.name = "Sphere";
+        sphere.name = "Boulder";
         scene.add(sphere);
         console.log("Added Sphere to Scene");
     }
     ;
     function spawnCoin() {
         // Coin Object
-        coin.position.set(0, 1, 1.5);
-        coin.receiveShadow = true;
-        coin.castShadow = true;
-        coin.name = "Coin";
-        scene.add(coin);
-        console.log("Added Coin to Scene");
+        if (sphere.position.x < -30 || sphere.position.x > -10) {
+            coin.position.set(-30, 1, 5);
+            coin.rotation.y = 1.5;
+            coin.receiveShadow = true;
+            coin.castShadow = true;
+            coin.name = "Coin";
+            scene.add(coin);
+            console.log("Added Coin to Scene");
+        }
     }
     function checkSpawns() {
         if (sphere.position.x < -50 || sphere.position.x > 50) {
@@ -285,7 +290,7 @@ var game = (function () {
         text2.style.fontSize = "20";
         text2.style.top = 50 + 'px';
         text2.style.left = 50 + 'px';
-        text2.innerHTML = "Lives: " + lives--;
+        text2.innerHTML = "Lives: " + lives;
     }
     ;
     // Setup main game loop
@@ -308,6 +313,9 @@ var game = (function () {
                 var direction = new Vector3(0, 0, 0);
                 if (keyboardControls.moveForward) {
                     velocity.z -= 400.0 * delta;
+                }
+                if (keyboardControls.moveBackward) {
+                    velocity.z += 400.0 * delta;
                 }
                 if (keyboardControls.moveLeft) {
                     velocity.x -= 400.0 * delta;
@@ -332,6 +340,19 @@ var game = (function () {
                 if (Math.abs(player.getLinearVelocity().x) < 20 && Math.abs(player.getLinearVelocity().y) < 10) {
                     player.applyCentralForce(direction);
                 }
+                // other objects movement
+                var velocity2 = new Vector3();
+                var direction2 = new Vector3();
+                velocity2.z += 400 * delta;
+                direction2.addVectors(direction2, velocity2);
+                direction2.applyQuaternion(coin.quaternion);
+                coin.applyCentralForce(direction2);
+                var velocity3 = new Vector3();
+                var direction3 = new Vector3();
+                velocity3.z += 400 * delta;
+                direction3.addVectors(direction3, velocity3);
+                direction3.applyQuaternion(sphere.quaternion);
+                sphere.applyCentralForce(direction3);
                 cameraLook();
             } // isGrounded ends
             //reset Pitch and Yaw
