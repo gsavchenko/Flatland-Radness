@@ -681,7 +681,11 @@ var game = (() => {
                 var velocity2 = new Vector3();
                 var direction2 = new Vector3();
                 
-                // Jason this is the equivalent to chiense code to me. please translate
+                // Get random number between 0 and 100 to provide mroe *even* ball movement
+                // 0 - 24 = apply force to ball positively along x axis
+                // 25 - 49 = apply force to ball negatively along x axis
+                // 50 - 74 = apply force to ball positively along z axis
+                // 75 - 100 = apply force to ball negatively along z axis
                 var rand = getRandomInt(0,100);
                 // Trying to get balls going back and forth
                     if (rand < 25) {
@@ -696,7 +700,7 @@ var game = (() => {
                     
                 direction2.addVectors(direction2, velocity2);
                 
-                // If the collecitble ball is undefined give it a rotation and apply force
+                // If the collecitble ball is NOT undefined give it a rotation and apply force
                 if (collectibleBall != undefined) {
                     direction2.applyQuaternion(collectibleBall.quaternion);
                     collectibleBall.applyCentralForce(direction2);
@@ -717,7 +721,7 @@ var game = (() => {
                         velocity3.z -= 500 * delta;
                     }
                     
-                    // If boulders are undefined apply a rotation/speed/force
+                    // If boulders are NOT undefined apply a rotation/speed/force
                     direction3.addVectors(direction3, velocity3);
                     if (boulders[i] != undefined) {
                         direction3.applyQuaternion(boulders[i].quaternion);

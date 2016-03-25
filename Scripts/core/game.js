@@ -8,7 +8,7 @@ Date last modified:     2016-03-25
 Program	description:    Create your own simple First Person Perspective game. The game must include hazards for the player to avoid. A scoring
                         system must also be included. You must build your own graphic and sound assets. You must use ThreeJS and a JavaScript
                         Physics Engine to build your game.
-Revision history:       made game more intuitive to play, added sounds, added colours, more code organization
+Revision history:       made game more intuitive to play, added sounds, added colors, more code organization
 THREEJS Aliases
 */
 var Scene = Physijs.Scene;
@@ -440,11 +440,11 @@ var game = (function () {
     function spawnCollecibleBall() {
         // Collectible Ball object
         if (collectibleBall == undefined) {
+            var xRand = getRandomSphereCoordinate();
+            var zRand = getRandomSphereCoordinate();
             collectibleBallGeometry = new SphereGeometry(0.5, 32, 32);
             collectibleBallMaterial = Physijs.createMaterial(new LambertMaterial({ color: 0xffff00 }), 0.4, 0);
             collectibleBall = new Physijs.SphereMesh(collectibleBallGeometry, collectibleBallMaterial, 1);
-            var xRand = getRandomSphereCoordinate();
-            var zRand = getRandomSphereCoordinate();
             collectibleBall.position.set(xRand, 2, zRand);
             collectibleBall.receiveShadow = true;
             collectibleBall.castShadow = true;
@@ -459,7 +459,7 @@ var game = (function () {
     }
     // Get random coordinates helper method
     function getRandomSphereCoordinate() {
-        var ret = 0; // Middle
+        var ret = 0; // Middle pls rename
         var intRand = getRandomInt(1, 100);
         if (intRand > 50) {
             ret = 20;
@@ -599,9 +599,13 @@ var game = (function () {
             // Other objects movement
             var velocity2 = new Vector3();
             var direction2 = new Vector3();
-            // Jason this is the equivalent to chiense code to me. please translate
+            // Get random number between 0 and 100 to provide mroe *even* ball movement
+            // 0 - 24 = apply force to ball positively along x axis
+            // 25 - 49 = apply force to ball negatively along x axis
+            // 50 - 74 = apply force to ball positively along z axis
+            // 75 - 100 = apply force to ball negatively along z axis
             var rand = getRandomInt(0, 100);
-            // trying to get balls going back and forth
+            // Trying to get balls going back and forth
             if (rand < 25) {
                 velocity2.x += 500 * delta;
             }
@@ -615,12 +619,12 @@ var game = (function () {
                 velocity2.z -= 500 * delta;
             }
             direction2.addVectors(direction2, velocity2);
-            // if the collecitble ball is undefined give it a rotation and apply force
+            // If the collecitble ball is NOT undefined give it a rotation and apply force
             if (collectibleBall != undefined) {
                 direction2.applyQuaternion(collectibleBall.quaternion);
                 collectibleBall.applyCentralForce(direction2);
             }
-            // how many boulders to spawn in the different corners 
+            // How many boulders to spawn in the different corners 
             for (var i = 0; i < numberOfBoulders; i++) {
                 var velocity3 = new Vector3();
                 var direction3 = new Vector3();
@@ -637,19 +641,18 @@ var game = (function () {
                 else {
                     velocity3.z -= 500 * delta;
                 }
-                // if boulders are undefined apply a rotation/speed/force
+                // If boulders are NOT undefined apply a rotation/speed/force
                 direction3.addVectors(direction3, velocity3);
                 if (boulders[i] != undefined) {
                     direction3.applyQuaternion(boulders[i].quaternion);
                     boulders[i].applyCentralForce(direction3);
                 }
             }
-            // wow.
             // Reset Pitch and Yaw
             mouseControls.pitch = 0;
             mouseControls.yaw = 0;
             prevTime = time;
-        } // Controls Enabled ends
+        } // controlsEnabled ends
         else {
             //Player doesn't move when it lands
             player.setAngularVelocity(new Vector3(0, 0, 0));
@@ -675,9 +678,6 @@ var game = (function () {
     // Setup main camera for the scene
     function setupCamera() {
         camera = new PerspectiveCamera(35, config.Screen.RATIO, 0.1, 100);
-        //if camera is attached to player - comment next 2 lines
-        //camera.position.set(-50, 10, 30);
-        //camera.lookAt(new Vector3(0, 0, 0));
         console.log("Finished setting up Camera...");
     }
     window.onload = preload;
