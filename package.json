@@ -1,7 +1,7 @@
 {
-  "name": "comp392-uphillmadness",
+  "name": "comp392-flatlandradness",
   "version": "1.0.0",
-  "description": "COMP392-Uphill Madness for Centennial College",
+  "description": "COMP392-Flatland Radness for Centennial College",
   "main": "game.js",
   "dependencies": {
     "typescript": "^1.8.7"
@@ -18,12 +18,12 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/CentennialCollege/COMP392-Lesson8.git"
+    "url": "git+https://github.com/CentennialCollege/COMP392-Flatland-Radness.git"
   },
   "author": "Jason Gunter and George Savchenko",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/gsavchenko/Uphill-Madness"
+    "url": "https://github.com/gsavchenko/Flatland-Radness"
   },
-  "homepage": "https://github.com/gsavchenko/Uphill-Madness"
+  "homepage": "https://github.com/gsavchenko/Flatland-Radness"
 }

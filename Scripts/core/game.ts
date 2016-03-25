@@ -627,7 +627,7 @@ var game = (() => {
         renderer.render(scene, camera);
     }
     
-    // Check Controls Function
+    // Check controls
     function checkControls(): void {
         if (keyboardControls.enabled) {
             velocity = new Vector3();
@@ -732,10 +732,10 @@ var game = (() => {
             prevTime = time;
         } // controlsEnabled ends
         else {
-            //Player doesn't move when it lands
+            // Player doesn't move when it lands
             player.setAngularVelocity(new Vector3(0, 0, 0));
         }
-    }
+    } // checkControls ends
     
     // Function for camera to track mouse
     function cameraLook(): void {
@@ -744,7 +744,7 @@ var game = (() => {
 
         var cameraPitch: number = camera.rotation.x + mouseControls.pitch;
 
-        // Constrain the Camera Pitch
+        // Constrain the camera pitch
         camera.rotation.x = THREE.Math.clamp(cameraPitch, nadir, zenith);
     }
 

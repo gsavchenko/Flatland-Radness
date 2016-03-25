@@ -1,22 +1,21 @@
 module objects {
-    /* 
-Keyboard Controls
-Source file	name:       keyboardcontrols.ts
+/* 
+Mouse Controls
+Source file	name:       mousecontrols.ts
 Author’s name:	        George Savcheko and Jason Gunter
-Last modified by:       Jason Gunter
-Date last modified:     2016-03-16
+Last modified by:       George Savchenko
+Date last modified:     2016-03-25
 Program	description:    Create your own simple First Person Perspective game. The game must include hazards for the player to avoid. A scoring
                         system must also be included. You must build your own graphic and sound assets. You must use ThreeJS and a JavaScript 
                         Physics Engine to build your game. 
-Revision history:       added comments and some keyboard functionality
-THREEJS Aliases
+Revision history:       fixed comments
 */
     // MouseControls Class +++++++++++++++
     export class MouseControls {
         // PUBLIC INSTANCE VARIABLES +++++++++
         public sensitivity: number;
-        public yaw: number; // look left and right - y-axis
-        public pitch: number; // look up and down - x-axis
+        public yaw: number; // look left and right - x-axis
+        public pitch: number; // look up and down - y-axis
         public enabled: boolean;
         // CONSTRUCTOR +++++++++++++++++++++++
         constructor() {
