@@ -5,11 +5,11 @@ MAIN GAME FILE
 Source file	name:       game.ts
 Author’s name:	        George Savcheko and Jason Gunter
 Last modified by:       George Savchenko
-Date last modified:     2016-03-23
+Date last modified:     2016-03-25
 Program	description:    Create your own simple First Person Perspective game. The game must include hazards for the player to avoid. A scoring
                         system must also be included. You must build your own graphic and sound assets. You must use ThreeJS and a JavaScript 
                         Physics Engine to build your game. 
-Revision history:       fixed rotation, added walls, made room
+Revision history:       made game more intuitive to play, added sounds, added colors, more code organization
 THREEJS Aliases
 */
 import Scene = Physijs.Scene;
@@ -37,7 +37,6 @@ import Face3 = THREE.Face3;
 import Point = objects.Point;
 import CScreen = config.Screen;
 import Clock = THREE.Clock;
-//import TextGeometry = THREE.TextGeometry;
 
 //Custom Game Objects
 import gameObject = objects.gameObject;
@@ -47,21 +46,26 @@ Physijs.scripts.worker = "/Scripts/lib/Physijs/physijs_worker.js";
 Physijs.scripts.ammo = "/Scripts/lib/Physijs/examples/js/ammo.js";
 
 
-// setup an IIFE structure (Immediately Invoked Function Expression)
+// Setup an IIFE structure (Immediately Invoked Function Expression)
 var game = (() => {
     
-    // declare game objects
+    // Declare game objects    
+    // HTML Elements
     var havePointerLock: boolean;
     var element: any;
-    var scene: Scene = new Scene(); // Instantiate Scene Object
-    var renderer: Renderer;
-    var camera: PerspectiveCamera;
-    var control: Control;
-    var gui: GUI;
-    var stats: Stats;
     var blocker: HTMLElement;
     var instructions: HTMLElement;
+    
+    // Scene objects
+    var scene: Scene = new Scene(); // instantiate Scene Object
+    var renderer: Renderer;
+    var camera: PerspectiveCamera;
+    var stats: Stats;
     var spotLight: SpotLight;
+    var ambientLight: AmbientLight;
+    var pointLight: PointLight;
+    
+    // Game objects
     var groundGeometry: CubeGeometry;
     var groundMaterial: Physijs.Material;
     var ground: Physijs.Mesh;
@@ -72,36 +76,81 @@ var game = (() => {
     var sphereGeometry: SphereGeometry;
     var sphereMaterial: Physijs.Material;
     var sphere: Physijs.Mesh;
-    var coin: Physijs.Mesh;
-    var coinGeo: SphereGeometry;
-    var coinMaterial: Physijs.Material;
     var keyboardControls: objects.KeyboardControls;
     var mouseControls: objects.MouseControls;
+    var assets: createjs.LoadQueue;
+    
+    // Custom game objects
+    var collectibleBallGeometry: SphereGeometry;
+    var collectibleBallMaterial: Physijs.Material;
+    var collectibleBall: Physijs.Mesh;
     var isGrounded: boolean;
     var velocity: Vector3 = new Vector3(0, 0, 0);
     var prevTime: number = 0;
-    var lives = 100;
+    var health = 100;
     var score = 0;
-    var livesText;
-    var collidableMeshList = [];
     var boulders: Physijs.Mesh[] = [];
     var numberOfBoulders = 10;
-
-    function init() {
-        coin = undefined; //trust me :) - jgunter
-        // Create to HTMLElements
+    var gameOver = false;
+    var wall;
+    var wall1;
+    var wall2;
+    var wall3;
+    var wall4;
+    // Message displayed to screen in index.html
+    var screenMessage = document.getElementById("message");
+    var messageWidth;
+    
+    // An array that contains our sounds
+    var manifest = [
+        {id: "land", src:"../../Assets/audio/land.wav"},
+        {id: "jump", src:"../../Assets/audio/jump.wav"},
+        {id: "yeah", src:"../../Assets/audio/yeah.mp3"},
+        {id: "bling", src:"../../Assets/audio/bling.wav"},
+        {id: "damage", src:"../../Assets/audio/damage.mp3"},
+        {id: "yayChord", src:"../../Assets/audio/yaychord.wav"},
+        {id: "gameover", src:"../../Assets/audio/gameover.mp3"},
+        {id: "gamelost", src:"../../Assets/audio/gamelost.wav"}      
+    ];
+    
+    // Preload sounds and store in LoadQueue
+    function preload(): void{
+        assets = new createjs.LoadQueue();
+        assets.installPlugin(createjs.Sound);
+        assets.on("complete", init); // run init (initialize scene) when preload complete
+        assets.loadManifest(manifest); // load array
+    }
+    
+    // Initialize scene
+    function init(): void{
+        
+        // Scene changes for Physijs
+        scene.name = "Main";
+        scene.fog = new THREE.Fog(0xffffff, 0, 750);
+        scene.setGravity(new THREE.Vector3(0, -10, 0));
+        
+        // Add event listener to scene
+        scene.addEventListener('update', () => {
+            scene.simulate(undefined, 2);
+        });
+        
+        updatePlayerStats(); // display player stats (health/score) on initialization       
+        collectibleBall = undefined; // ball is not in scene
+        
+        // Setup HTMLElements
         blocker = document.getElementById("blocker");
         instructions = document.getElementById("instructions");
         
-        updateLives();
-        //check to see if pointerlock is supported
+        // Check to see if pointerlock is supported
         havePointerLock = 'pointerLockElement' in document ||
             'mozPointerLockElement' in document ||
             'webkitPointerLockElement' in document;
-
+        
+        // Add keyboard and mouse controls to scene
         keyboardControls = new objects.KeyboardControls();
         mouseControls = new objects.MouseControls();
-
+        
+        // Lock mouse pointer to browser window
         if (havePointerLock) {
             element = document.body;
 
@@ -124,30 +173,17 @@ var game = (() => {
             document.addEventListener('mozpointerlockerror', pointerLockError);
             document.addEventListener('webkitpointerlockerror', pointerLockError);
         }
-
-        // Scene changes for Physijs
-        scene.name = "Main";
-        scene.fog = new THREE.Fog(0xffffff, 0, 750);
-        scene.setGravity(new THREE.Vector3(0, -10, 0));
-
-        scene.addEventListener('update', () => {
-            scene.simulate(undefined, 2);
-        });
-
-        // setup a THREE.JS Clock object
-        clock = new Clock();
-
+        
+        // MAIN SCENE SETUP
         setupRenderer(); // setup the default renderer
-
         setupCamera(); // setup the camera
-
 
         // Spot Light
         spotLight = new SpotLight(0xffffff);
         spotLight.position.set(0, 150, 0);
         spotLight.castShadow = true;
         spotLight.intensity = 1;
-        spotLight.lookAt(new Vector3(0, 10, 0));
+        spotLight.lookAt(new Vector3(0, 0, 0));
         spotLight.shadowCameraNear = 2;
         spotLight.shadowCameraFar = 200;
         spotLight.shadowCameraLeft = -5;
@@ -160,32 +196,41 @@ var game = (() => {
         spotLight.name = "Spot Light";
         scene.add(spotLight);
         console.log("Added spotLight to scene");
+        
+        //Add point light
+        pointLight = new PointLight(0xffffff, 1, 0);
+        pointLight.position.set(0,50,0);
+        pointLight.castShadow = true;
+        scene.add(pointLight);
 
-        // Burnt Ground
+        // Ground
         groundGeometry = new BoxGeometry(50, 1, 50);
         var wallGeo = new BoxGeometry(50, 1, 15);
-        groundMaterial = Physijs.createMaterial(new LambertMaterial({ color: 0x3498db }), 0, 0);            
+        groundMaterial = Physijs.createMaterial(new LambertMaterial({ color: 0xecf0f1 }), 0, 0);            
         ground = new Physijs.ConvexMesh(groundGeometry, groundMaterial, 0);
         ground.receiveShadow = true;
         ground.name = "Ground";
         scene.add(ground);
-        console.log("Added Burnt Ground to scene");
+        console.log("Added Ground to scene");
         
-        var wall = new Physijs.ConvexMesh(wallGeo, groundMaterial, 0);
+        // Wall One
+        wall = new Physijs.ConvexMesh(wallGeo, groundMaterial, 0);
         wall.receiveShadow = true;
         wall.name = "Wall1";
         wall.rotation.x = Math.PI / 2;;
         wall.position.set(0,7,-25);
         scene.add(wall);
         
-        var wall2 = new Physijs.ConvexMesh(wallGeo, groundMaterial, 0);
+        // Wall Two
+        wall2 = new Physijs.ConvexMesh(wallGeo, groundMaterial, 0);
         wall2.receiveShadow = true;
         wall2.name = "Wall2";
         wall2.rotation.x = -Math.PI / 2;;
         wall2.position.set(0,7,25); 
         scene.add(wall2);
         
-        var wall3 = new Physijs.ConvexMesh(wallGeo, groundMaterial, 0);
+        // Wall Three
+        wall3 = new Physijs.ConvexMesh(wallGeo, groundMaterial, 0);
         wall3.receiveShadow = true;
         wall3.name = "Wall3";
         wall3.rotation.x = -Math.PI / 2;;
@@ -193,7 +238,8 @@ var game = (() => {
         wall3.position.set(25,7,0);
         scene.add(wall3);
         
-        var wall4 = new Physijs.ConvexMesh(wallGeo, groundMaterial, 0);
+        // Wall Four
+        wall4 = new Physijs.ConvexMesh(wallGeo, groundMaterial, 0);
         wall4.receiveShadow = true;
         wall4.name = "Wall4";
         wall4.rotation.x = -Math.PI / 2;;
@@ -202,13 +248,14 @@ var game = (() => {
         scene.add(wall4);
         console.log("Walls Added");
         
-        //spawn objects
-        spawnCoin();
+        // Spawn objects
+        spawnCollecibleBall();
         spawnBoulders();
+        
         // Player Object
         playerGeometry = new BoxGeometry(2, 2, 2);
         playerMaterial = Physijs.createMaterial(new LambertMaterial({ color: 0x00ff00 }), 0.4, 0);
-
+        
         player = new Physijs.BoxMesh(playerGeometry, playerMaterial, 1);
         player.position.set(20, 5, 5);
         player.receiveShadow = true;
@@ -216,35 +263,50 @@ var game = (() => {
         player.name = "Player";
         player.rotation.y = 1.5;
         scene.add(player);
-        console.log("Added Pladyer to Scene");
-
+        console.log("Added Player to Scene");
+        
+        // Player collision detection
         player.addEventListener('collision', (event) => {
             if (event.name === "Ground") {
                 console.log("player hit the ground");
                 isGrounded = true;
+                createjs.Sound.play("land");
             }
             if (event.name === "Boulder") {
-                lives = lives -= 1;
-                updateLives();
-                console.log("player hit the sphere");
+                health = health -= 1; // decrement health on hit
+                
+                // Check if the player is dead
+                if(health <= 0){
+                    health = 0;
+                    createjs.Sound.play("gamelost");
+                }
+                
+                updatePlayerStats();
+                console.log("player hit the boulder");
+                createjs.Sound.play("damage");
             }
-            if (event.name == "Coin") {
-                score = score += 1;
-                scene.remove(coin);
-                coin = undefined;
-                updateLives();
-                console.log("player hit the coin");
+            if (event.name == "CollectibleBall") {                
+                score = score += 1; // increment score on hit
+                
+                // Check if the game has been won
+                if(score < 10)
+                    flashFeedback();
+                else {
+                    giveFeedback();
+                    createjs.Sound.play("gameover");
+                }
+                
+                scene.remove(collectibleBall);
+                collectibleBall = undefined;
+                updatePlayerStats();
+                console.log("player hit the collectible ball");
+                createjs.Sound.play("bling");
             }
         });
         
-        //Add camera to player
+        // Add camera to player
         player.add(camera);
         camera.position.set(0, 1, 0);
-
-        // add controls
-        gui = new GUI();
-        control = new Control();
-        addControl(control);
 
         // Add framerate stats
         addStatsObject();
@@ -252,20 +314,134 @@ var game = (() => {
 
         document.body.appendChild(renderer.domElement);
         gameLoop(); // render the scene	
-        scene.simulate();
+        scene.simulate(); // iterate physics setup
 
         window.addEventListener('resize', onWindowResize, false);
+    } // end init
+    
+    // Helper method to switch scene object colors, play sound and display message on collecitble ball hit
+    function flashFeedback(): void{           
+        giveFeedback();
+        setTimeout(function(){resetFeedback();}, 1000);
     }
-
-    //PointerLockChange Event Handler
+    // Helper method to reset object colors and screen message back to original
+    function resetFeedback(): void{
+        
+        displayMessage("");
+        
+        // Change wall colors
+        wall.material = Physijs.createMaterial(new LambertMaterial({ color: 0xecf0f1 }), 0, 0);
+        wall2.material = Physijs.createMaterial(new LambertMaterial({ color: 0xecf0f1 }), 0, 0);
+        wall3.material = Physijs.createMaterial(new LambertMaterial({ color: 0xecf0f1 }), 0, 0);
+        wall4.material = Physijs.createMaterial(new LambertMaterial({ color: 0xecf0f1 }), 0, 0);
+        // Change ground color
+        ground.material = Physijs.createMaterial(new LambertMaterial({ color: 0xecf0f1 }), 0, 0);
+        // Change scene color
+        renderer.setClearColor(0x404040, 1.0);
+        
+        // Change boulder colors
+        for (var i = 0; i < numberOfBoulders; i++) {
+            boulders[i].material = Physijs.createMaterial(new LambertMaterial({ color: 0x000000 }), 0.4, 0);
+        }
+    }
+    // Helper method to change object colors, play sound and display message
+    function giveFeedback(): void{
+        // Play sounds
+        createjs.Sound.play("yeah");
+        createjs.Sound.play("yayChord");
+        
+        displayMessage(getRandomMessage()); // display message
+        
+        // Change wall colors
+        wall.material = Physijs.createMaterial(new LambertMaterial({ color: 0xFF0080 }), 0, 0);
+        wall2.material = Physijs.createMaterial(new LambertMaterial({ color: 0xFF0080 }), 0, 0);
+        wall3.material = Physijs.createMaterial(new LambertMaterial({ color: 0xFF0080 }), 0, 0);
+        wall4.material = Physijs.createMaterial(new LambertMaterial({ color: 0xFF0080 }), 0, 0);
+        // Change ground color
+        ground.material = Physijs.createMaterial(new LambertMaterial({ color: 0xccff00 }), 0, 0);
+        // Change scene color
+        renderer.setClearColor(0xBF5FFF, 1.0);
+        
+        // Change boulder colors
+        for (var i = 0; i < numberOfBoulders; i++) {
+                boulders[i].material = Physijs.createMaterial(new LambertMaterial({ color: getRandomColour() }), 0.4, 0);
+        }
+    }
+    
+    // Helper method returns 1 of three colours
+    function getRandomColour(): number{
+        
+            var colourScheme = Math.floor(Math.random() * 3) + 1;
+            
+            switch (colourScheme) {
+                case 1:
+                    return new THREE.Color("#1E90FF").getHex();
+                case 2:
+                    return new THREE.Color("#FF0000").getHex();
+                case 3:
+                    return new THREE.Color("#32CD32").getHex();
+                default:
+                    return new THREE.Color("#000000").getHex(); // default color
+            }        
+    }
+    
+    // Helper 1 of 10 possible message combinations
+    function getRandomMessage(): string{
+            var message; // store message
+            var emoji; // store emoji
+            
+            // Get random number from 1 to 3
+            var randomMessage = Math.floor(Math.random() * 3) + 1;
+            var randomEmoji = Math.floor(Math.random() * 3) + 1;
+            
+            // Return special message when half way to winning
+            if (score != 5) {
+            switch (randomMessage) {
+                    case 1:
+                        message = "wow! nice ";
+                        break;
+                    case 2:
+                        message = "keep it up! ";
+                        break;
+                    case 3:
+                        message = "you go ";
+                        break;
+                    default:
+                        message = "default"; // default message
+                        break;
+                }
+            
+            switch (randomEmoji) {
+                case 1:
+                    emoji = "(づ｡◕‿‿◕｡)づ";
+                    break;
+                case 2:
+                    emoji = "(☞ﾟ∀ﾟ)☞";
+                    break;
+                case 3:
+                    emoji = "☜(˚▽˚)☞";
+                    break;
+                default:
+                    emoji = "default"; // default emoji
+                    break;
+                }
+                
+                return message + emoji;
+            }
+            else {
+                return "(ง°ل͜°)ง half way there"; // special characters are breaking visual studio code editor lol
+            }
+        }
+    
+    // PointerLockChange Event Handler
     function pointerLockChange(event): void {
         if (document.pointerLockElement === element) {
-            // enable our mouse and keyboard controls
+            // Enable our mouse and keyboard controls
             keyboardControls.enabled = true;
             mouseControls.enabled = true;
             blocker.style.display = 'none';
         } else {
-            // disable our mouse and keyboard controls
+            // Disable our mouse and keyboard controls
             keyboardControls.enabled = false;
             mouseControls.enabled = false;
             blocker.style.display = '-webkit-box';
@@ -276,7 +452,7 @@ var game = (() => {
         }
     }
 
-    //PointerLockError Event Handler
+    // PointerLockError Event Handler
     function pointerLockError(event): void {
         instructions.style.display = '';
         console.log("PointerLock Error Detected!!");
@@ -289,12 +465,8 @@ var game = (() => {
         renderer.setSize(window.innerWidth, window.innerHeight);
     }
 
-    function addControl(controlObject: Control): void {
-        /* ENTER CODE for the GUI CONTROL HERE */
-    }
-
     // Add Frame Rate Stats to the Scene
-    function addStatsObject() {
+    function addStatsObject(): void{
         stats = new Stats();
         stats.setMode(0);
         stats.domElement.style.position = 'absolute';
@@ -303,19 +475,17 @@ var game = (() => {
         document.body.appendChild(stats.domElement);
     }        
     
+    // Spawn boulders (do damage)
     function spawnBoulders(): void{
-<<<<<<< HEAD
-        for (var i = 0; i < 4; i++) {
-            if (boulders[i] == undefined) { // if no boulder then add a boulder :) - jgunter
-=======
         for (var i = 0; i < numberOfBoulders; i++) {
-            if (boulders[i] == undefined) { //if no boulder then add a boulder :) - jgunter
->>>>>>> 67c2d80593a5ca6cf9100533c707c99b117e8048
-                sphereGeometry = new SphereGeometry(1, 32, 32);
-                sphereMaterial = Physijs.createMaterial(new LambertMaterial({ color: 0x8B4726 }), 0.4, 0);
-                sphere = new Physijs.SphereMesh(sphereGeometry, sphereMaterial, 1);
+            if (boulders[i] == undefined) { // if no boulder then add a boulder
+               
                 var xRand = getRandomSphereCoordinate();
                 var zRand = getRandomSphereCoordinate();
+                
+                sphereGeometry = new SphereGeometry(1, 32, 32);
+                sphereMaterial = Physijs.createMaterial(new LambertMaterial({ color: 0x000000 }), 0.4, 0);
+                sphere = new Physijs.SphereMesh(sphereGeometry, sphereMaterial, 1);
                 sphere.position.set(xRand, 5, zRand);
                 sphere.receiveShadow = true;
                 sphere.castShadow = true;
@@ -326,29 +496,33 @@ var game = (() => {
         }
     };
     
-    function spawnCoin() {
-        // Coin Object
-        if (coin == undefined) {
-            coinGeo = new SphereGeometry(0.5, 32, 32);
-            coinMaterial = Physijs.createMaterial(new LambertMaterial({ color: 0xffff00 }), 0.4, 0);
-            coin = new Physijs.CylinderMesh(coinGeo, coinMaterial, 1);
+    // Spawn the 'collectible' ball (scores points)
+    function spawnCollecibleBall() {
+        // Collectible Ball object
+        if (collectibleBall == undefined) {
             var xRand = getRandomSphereCoordinate();
             var zRand = getRandomSphereCoordinate();
-            coin.position.set(xRand, 2, zRand);
-            coin.receiveShadow = true;
-            coin.castShadow = true;
-            coin.name = "Coin";
-            scene.add(coin);
+            
+            collectibleBallGeometry = new SphereGeometry(0.5, 32, 32);
+            collectibleBallMaterial = Physijs.createMaterial(new LambertMaterial({ color: 0xffff00 }), 0.4, 0);
+            collectibleBall = new Physijs.SphereMesh(collectibleBallGeometry, collectibleBallMaterial, 1);
+            collectibleBall.position.set(xRand, 2, zRand);
+            collectibleBall.receiveShadow = true;
+            collectibleBall.castShadow = true;
+            collectibleBall.name = "CollectibleBall";
+            scene.add(collectibleBall);
         }
     }
     
+    // Check spawns helper method
     function checkSpawns() {
             spawnBoulders();
-            spawnCoin();
+            spawnCollecibleBall();
     }
     
+    // Get random coordinates helper method
     function getRandomSphereCoordinate() {
-        var ret = 0; //middle
+        var ret = 0; // Middle pls rename
         var intRand = getRandomInt(1,100);
         if (intRand > 50) {
             ret = 20;
@@ -356,84 +530,100 @@ var game = (() => {
             ret = -20;
         }
         return ret;
-    }
-    
+    }    
+    // Helper method that returns random number between min/max
     function getRandomInt(min, max) {
         return Math.floor(Math.random() * (max - min + 1)) + min;
     };
     
-    function updateLives(): void{
-        var text2 = document.getElementById("lives");
+    // Updates the player statistics on index.html
+    function updatePlayerStats(): void{
+        var text2 = document.getElementById("playerStats");
         text2.style.color = "white"
         text2.style.fontSize = "20";
         text2.style.top = 50 + 'px';
         text2.style.left = 50 + 'px';
-        text2.innerHTML = "Health: " + lives + "<br>"
+        text2.innerHTML = "Health: " + health + "<br>"
             + "Score: " + score;
     };
     
+    // Function that checks scores and game over (contantly looped)
     function checkScores() {
-        var btnString = "<br><br><br>Press 'R' and they 'Y' to restart the game...";
-        var txtMsg = document.getElementById("msg");
-        txtMsg.style.color = "white"
-        txtMsg.style.fontSize = "60px";
-        var msgWidth = (txtMsg.clientWidth / 2);
-        txtMsg.style.display = "none";
-        txtMsg.style.top = 200 + 'px';
-        txtMsg.style.left = ((screen.width / 2) - msgWidth) + 'px';
-        var gameOver = false;
-        if (lives <= 0) { //aka health dude - jgunter
-            //player lost, show msg and restart button. - jgunter
-            txtMsg.innerHTML = "You Lost dude.....take your things and get out! >:(" + btnString;
-            txtMsg.style.display = "block";
+        var btnString = "<br><br><br>Press 'R' + 'Y' to restart the game...";
+
+        if (health <= 0) {
+            // Player lost, show message and restart
+            health = 0;
+             displayMessage("You lost... :'( Try again!" + btnString);
             gameOver = true;
         } else if (score >= 10) {
-            //player won, show msg and restart button. - jgunter
-            txtMsg.innerHTML = "You Win DUDE! :)" + btnString;
-            txtMsg.style.display = "block";
+            // Player won, show message and restart
+            displayMessage("You win yeah! :)" + btnString);         
             gameOver = true;
+            
         } else {
             gameOver = false;
         }
+        // Restart game if button Y + R combination is pressed
         if (keyboardControls.restartP1 && keyboardControls.restartP2 && gameOver) {
-            RestartgamePlease();
+            restartGame();
             keyboardControls.restartP1 = false;
             keyboardControls.restartP2 = false;
-            // LMAO - if you comment out these two lines, you add infinite items on restart :) - jgunter
         }
     }
     
-    function RestartgamePlease() {
+    // Displays given string to screen (using the "message" div/id in index.html)
+    function displayMessage(message): void{
+        screenMessage.style.color = "white"
+        screenMessage.style.fontSize = "60px";
+        messageWidth = (screenMessage.clientWidth / 2);
+        screenMessage.style.display = "none";
+        screenMessage.style.top = 200 + 'px';
+        screenMessage.style.left = ((screen.width / 2) - messageWidth) + 'px';
+        screenMessage.innerHTML = message;
+        screenMessage.style.display = "block";
+    }
+    
+    // Restart game
+    function restartGame() {
+        // Remove message and reset color
+        displayMessage("");
+        resetFeedback();
+               
+        // Reset score
         score = 0;
-        lives = 100;
-        scene.remove(coin);
+        health = 100;
+        scene.remove(collectibleBall);
         for (var i = 0; i < numberOfBoulders; i++) {
             scene.remove(boulders[i]);
         }
-        coin = undefined;
+        
+        // Remove objects
+        collectibleBall = undefined;
         boulders = [];
-        spawnCoin();
+        
+        // Spawn objects again
+        spawnCollecibleBall();
         spawnBoulders();
+        
         // Player Object
         player.position.set(20, 5, 5);
         player.rotation.y = 1.5;
-        updateLives(); //update the scoreboard values dude - jgunter.
+        updatePlayerStats(); // update the scoreboard values
     }
 
     // Setup main game loop
     function gameLoop(): void {
-        stats.update();
         
-        checkControls();
-        
-        checkSpawns();
-        
-        checkScores();
+        stats.update(); // update stats.js        
+        checkControls(); // check for mouse/keyboard input
+        checkSpawns();  // check if boulders/collectible balls need to be spawned  
+        checkScores();  // check if health or score needs to be updated or if the game is over
 
-        // render using requestAnimationFrame
+        // Render using requestAnimationFrame
         requestAnimationFrame(gameLoop);
 
-        // render the scene
+        // Render the scene
         renderer.render(scene, camera);
     }
     
@@ -446,48 +636,54 @@ var game = (() => {
             var delta: number = (time - prevTime) / 1000;
             var direction = new Vector3(0, 0, 0);
             
-            if (isGrounded) {                
+            // Check for input
+            if (isGrounded) {                    
                 if (keyboardControls.moveForward) {
-                      velocity.z -= 400.0 * delta;
+                      velocity.z -= 600.0 * delta;
                 }
                 if (keyboardControls.moveBackward) {
-                      velocity.z += 400.0 * delta;
+                      velocity.z += 600.0 * delta;
                 }
                 if (keyboardControls.moveLeft) {
-                    velocity.x -= 400.0 * delta;
+                    velocity.x -= 600.0 * delta;
                 }
                 if (keyboardControls.moveBackward) {
-                    velocity.z += 400.0 * delta;
+                    velocity.z += 600.0 * delta;
                 }
                 if (keyboardControls.moveRight) {
-                    velocity.x += 400.0 * delta;
+                    velocity.x += 600.0 * delta;
                 }
                 if (keyboardControls.jump) {
                     velocity.y += 4000.0 * delta;
-                    if (player.position.y > 4) {
+                    if (player.position.y > 2) {
+                        createjs.Sound.play("jump");
                         isGrounded = false;
-                    }
-                    
+                    }                     
                 }
 
-                player.setDamping(0.7, 0.1);
+                player.setDamping(0.9, 0.1); // Reduce frition when moving on ground
+                
                 // Changing player's rotation
                 player.setAngularVelocity(new Vector3(0, mouseControls.yaw, 0));
                 direction.addVectors(direction, velocity);
                 direction.applyQuaternion(player.quaternion);
-                if (Math.abs(player.getLinearVelocity().x) < 20 && Math.abs(player.getLinearVelocity().y) < 10) {
-                    player.applyCentralForce(direction);
-                }
                 
+                // Let the player move if it's current x velocity is under 20 and y velocity under 10 (units)
+               if (Math.abs(player.getLinearVelocity().x) < 20 && Math.abs(player.getLinearVelocity().y) < 10) {
+                    player.applyCentralForce(direction);
+               }
 
-                cameraLook();
+                cameraLook(); // Point camera to mouse
 
             } // isGrounded ends
             
-             // other objects movement
+                 // Other objects movement
                 var velocity2 = new Vector3();
                 var direction2 = new Vector3();
+                
+                // Jason this is the equivalent to chiense code to me. please translate
                 var rand = getRandomInt(0,100);
+                // Trying to get balls going back and forth
                     if (rand < 25) {
                         velocity2.x += 500 * delta;
                     } else if (rand > 25 && rand < 50) {
@@ -497,12 +693,16 @@ var game = (() => {
                     } else {
                         velocity2.z -= 500 * delta;
                     }
+                    
                 direction2.addVectors(direction2, velocity2);
-                if (coin != undefined) {
-                    direction2.applyQuaternion(coin.quaternion);
-                    coin.applyCentralForce(direction2);
+                
+                // If the collecitble ball is undefined give it a rotation and apply force
+                if (collectibleBall != undefined) {
+                    direction2.applyQuaternion(collectibleBall.quaternion);
+                    collectibleBall.applyCentralForce(direction2);
                 }
                 
+                // How many boulders to spawn in the different corners 
                 for (var i = 0; i < numberOfBoulders; i++) {
                     var velocity3 = new Vector3();
                     var direction3 = new Vector3();
@@ -517,27 +717,27 @@ var game = (() => {
                         velocity3.z -= 500 * delta;
                     }
                     
-                    
+                    // If boulders are undefined apply a rotation/speed/force
                     direction3.addVectors(direction3, velocity3);
                     if (boulders[i] != undefined) {
                         direction3.applyQuaternion(boulders[i].quaternion);
                         boulders[i].applyCentralForce(direction3);
                     }
-                }   
-                
-            // other movements ends :) - jgunter. Moved this cuz objects dont move if player has jumped
+                }
 
-            //reset Pitch and Yaw
+            // Reset Pitch and Yaw
             mouseControls.pitch = 0;
             mouseControls.yaw = 0;
 
             prevTime = time;
-        } // Controls Enabled ends
+        } // controlsEnabled ends
         else {
+            //Player doesn't move when it lands
             player.setAngularVelocity(new Vector3(0, 0, 0));
         }
     }
     
+    // Function for camera to track mouse
     function cameraLook(): void {
         var zenith: number = THREE.Math.degToRad(10);
         var nadir: number = THREE.Math.degToRad(-10);
@@ -561,13 +761,10 @@ var game = (() => {
     // Setup main camera for the scene
     function setupCamera(): void {
         camera = new PerspectiveCamera(35, config.Screen.RATIO, 0.1, 100);
-        // if camera is attached to player - comment next 2 lines
-        //camera.position.set(-50, 10, 30);
-        //camera.lookAt(new Vector3(0, 0, 0));
         console.log("Finished setting up Camera...");
     }
 
-    window.onload = init;
+    window.onload = preload;
 
     return {
         scene: scene
