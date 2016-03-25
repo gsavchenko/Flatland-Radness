@@ -1,13 +1,13 @@
 {
-  "name": "comp392-Uphill-Madness",
+  "name": "comp392-Flatland-Radness",
   "authors": [
     "Jason Gunter and George Savchenko"
   ],
-  "description": "COMP392 Uphill Madness Game for Advanced Graphics",
+  "description": "COMP392 Flatland Radness Game for Advanced Graphics",
   "main": "",
   "moduleType": [],
   "license": "MIT",
-  "homepage": "https://github.com/gsavchenko/Uphill-Madness",
+  "homepage": "https://github.com/gsavchenko/Flatland-Radness",
   "ignore": [
     "**/.*",
     "node_modules",

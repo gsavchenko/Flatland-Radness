@@ -8,7 +8,6 @@ Program	description:    Create your own simple First Person Perspective game. Th
                         system must also be included. You must build your own graphic and sound assets. You must use ThreeJS and a JavaScript 
                         Physics Engine to build your game. 
 Revision history:       added reset input keys (Y + R)
-THREEJS Aliases
 */
 
 module objects {
