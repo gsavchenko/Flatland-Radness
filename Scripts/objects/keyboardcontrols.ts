@@ -1,3 +1,15 @@
+/* 
+Keyboard Controls
+Source file	name:       keyboardcontrols.ts
+Author’s name:	        George Savcheko and Jason Gunter
+Last modified by:       Jason Gunter
+Date last modified:     2016-03-24
+Program	description:    Create your own simple First Person Perspective game. The game must include hazards for the player to avoid. A scoring
+                        system must also be included. You must build your own graphic and sound assets. You must use ThreeJS and a JavaScript 
+                        Physics Engine to build your game. 
+Revision history:       added reset input keys (Y + R)
+*/
+
 module objects {
     // KeyboardControls Class +++++++++++++++
     export class KeyboardControls {

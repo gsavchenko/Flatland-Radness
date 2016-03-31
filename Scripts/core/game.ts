@@ -9,7 +9,7 @@ Date last modified:     2016-03-25
 Program	description:    Create your own simple First Person Perspective game. The game must include hazards for the player to avoid. A scoring
                         system must also be included. You must build your own graphic and sound assets. You must use ThreeJS and a JavaScript 
                         Physics Engine to build your game. 
-Revision history:       made game more intuitive to play, added sounds, added colors, more code organization
+Revision history:       renamed game and updated game design document
 THREEJS Aliases
 */
 import Scene = Physijs.Scene;
@@ -627,7 +627,7 @@ var game = (() => {
         renderer.render(scene, camera);
     }
     
-    // Check Controls Function
+    // Check controls
     function checkControls(): void {
         if (keyboardControls.enabled) {
             velocity = new Vector3();
@@ -681,7 +681,7 @@ var game = (() => {
                 var velocity2 = new Vector3();
                 var direction2 = new Vector3();
                 
-                // Get random number between 0 and 100 to provide mroe *even* ball movement
+                // Get random number between 0 and 100 to provide more *even* ball movement
                 // 0 - 24 = apply force to ball positively along x axis
                 // 25 - 49 = apply force to ball negatively along x axis
                 // 50 - 74 = apply force to ball positively along z axis
@@ -736,10 +736,10 @@ var game = (() => {
             prevTime = time;
         } // controlsEnabled ends
         else {
-            //Player doesn't move when it lands
+            // Player doesn't move when it lands
             player.setAngularVelocity(new Vector3(0, 0, 0));
         }
-    }
+    } // checkControls ends
     
     // Function for camera to track mouse
     function cameraLook(): void {
@@ -748,7 +748,7 @@ var game = (() => {
 
         var cameraPitch: number = camera.rotation.x + mouseControls.pitch;
 
-        // Constrain the Camera Pitch
+        // Constrain the camera pitch
         camera.rotation.x = THREE.Math.clamp(cameraPitch, nadir, zenith);
     }
 
